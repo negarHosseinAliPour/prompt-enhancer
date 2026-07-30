@@ -1,0 +1,40 @@
+{"task_id": "rotate100", "completion": "always @(posedge clk)\n  q <= load ? data : (ena == 2'b01 ? {1'b0, q[99:1]} : (ena == 2'b10 ? {q[98:0], 1'b0} : q));\n\nendmodule\n"}
+{"task_id": "dff8ar", "completion": "always @(posedge clk or posedge areset)\n  if (areset)\n    q <= 8'h0;\n  else\n    q <= d;\n\nendmodule\n"}
+{"task_id": "lemmings1", "completion": "reg state;\n\nalways @(posedge clk or posedge areset) begin\n    if (areset)\n        state <= 0;\n    else\n        state <= (state == 0) ? (bump_left ? 1 : 0) : (bump_right ? 0 : 1);\nend\n\nassign walk_left = (state == 0);\nassign walk_right = (state == 1);\n\nendmodule\n"}
+{"task_id": "2013_q2afsm", "completion": "localparam A=2'd0, B=2'd1, C=2'd2, D=2'd3;\n  reg [1:0] state, next;\n\n  always @(posedge clk, negedge resetn) begin\n    if (!resetn)\n      state <= A;\n    else\n      state <= next;\n  end\n\n  always @(*) begin\n    case(state)\n      A:\n        if (r[1]) next = B;\n        else if (r[2]) next = C;\n        else if (r[3]) next = D;\n        else next = A;\n      B:\n        if (r[1]) next = B;\n        else next = A;\n      C:\n        if (r[2]) next = C;\n        else next = A;\n      D:\n        if (r[3]) next = D;\n        else next = A;\n      default: next = A;\n    endcase\n  end\n\n  assign g[1] = (state == B);\n  assign g[2] = (state == C);\n  assign g[3] = (state == D);\n\nendmodule\n"}
+{"task_id": "review2015_count1k", "completion": "always @(posedge clk)\nbegin\n    if (reset || q == 999)\n        q <= 10'd0;\n    else\n        q <= q + 1;\nend\n\nendmodule\n"}
+{"task_id": "m2014_q4e", "completion": "assign out = ~(in1 | in2);\n\nendmodule\n"}
+{"task_id": "vector4", "completion": "assign out = {{24{in[7]}}, in};\n\nendmodule\n"}
+{"task_id": "zero", "completion": "assign zero = 1'b0;\n\nendmodule\n"}
+{"task_id": "always_if2", "completion": "always @(*) \n        shut_off_computer = cpu_overheated;\n\n    always @(*) \n        keep_driving = ~arrived & ~gas_tank_empty;\n\nendmodule\n"}
+{"task_id": "counter_2bc", "completion": "logic [1:0] state_reg;\n\n    always_ff @(posedge clk, posedge areset)\n    begin\n        if (areset)\n            state_reg <= 2'b01;\n        else\n        begin\n            if (train_valid)\n            begin\n                if (train_taken)\n                begin\n                    if (state_reg < 3)\n                        state_reg <= state_reg + 1;\n                end\n                else\n                begin\n                    if (state_reg > 0)\n                        state_reg <= state_reg - 1;\n                end\n            end\n        end\n    end\n\n    assign state = state_reg;\n\nendmodule\n"}
+{"task_id": "circuit1", "completion": "assign q = a & b;\n\nendmodule\n"}
+{"task_id": "andgate", "completion": "assign out = a & b;\n\nendmodule\n"}
+{"task_id": "step_one", "completion": "assign one = 1'b1;\n\nendmodule\n"}
+{"task_id": "count1to10", "completion": "always @(posedge clk)\nbegin\n\tif(reset || q==10)\n\t\tq <= 4'd1;\n\telse\n\t\tq <= q+1;\nend\n\nendmodule\n"}
+{"task_id": "m2014_q4d", "completion": "initial begin\n    out = 0;\nend\n\nalways @(posedge clk) begin\n    out <= out ^ in;\nend\n\nendmodule\n"}
+{"task_id": "fsm1", "completion": "reg state_is_B;\n\nalways @(posedge clk or posedge areset)\nbegin\n    if (areset)\n        state_is_B <= 1'b1;\n    else\n        state_is_B <= (state_is_B & in) | (~state_is_B & ~in);\nend\n\nassign out = state_is_B;\n\nendmodule\n"}
+{"task_id": "dff16e", "completion": "always @(posedge clk or negedge resetn)\nbegin\n    if (!resetn)\n        q <= 16'b0;\n    else \n    begin\n        if (byteena[0])\n            q[7:0] <= d[7:0];\n        if (byteena[1])\n            q[15:8] <= d[15:8];\n    end\nend\n\nendmodule\n"}
+{"task_id": "conditional", "completion": "always_comb begin\n    min = a;\n    if (b < min)\n        min = b;\n    if (c < min)\n        min = c;\n    if (d < min)\n        min = d;\nend\n\nendmodule\n"}
+{"task_id": "gates4", "completion": "assign out_and = &in;\nassign out_or = |in;\nassign out_xor = ^in;\n\nendmodule\n"}
+{"task_id": "mux256to1v", "completion": "assign out = in[sel*4 +: 4];\n\nendmodule\n"}
+{"task_id": "hadd", "completion": "assign {cout, sum} = a + b;\n\nendmodule\n"}
+{"task_id": "ece241_2013_q7", "completion": "always @(posedge clk)\n    Q <= (j & ~Q) | (~k & Q);\n\nendmodule\n"}
+{"task_id": "ringer", "completion": "assign ringer = ring & ~vibrate_mode;\nassign motor = ring & vibrate_mode;\n\nendmodule\n"}
+{"task_id": "timer", "completion": "reg [9:0] count_reg;\n\nalways @(posedge clk) begin\n    if (load)\n        count_reg <= data;\n    else if (count_reg > 0)\n        count_reg <= count_reg - 1;\nend\n\nassign tc = (count_reg == 0);\n\nendmodule\n"}
+{"task_id": "circuit7", "completion": "always @(posedge clk)\n    q <= ~a;\n\nendmodule\n"}
+{"task_id": "gatesv100", "completion": "assign out_both = in[99:1] & in[98:0];\nassign out_any = in[99:1] | in[98:0];\nassign out_different = in[99:0] ^ {1'b0, in[99:1]};\n\nendmodule\n"}
+{"task_id": "vector100r", "completion": "always_comb\n    for (int i=0; i<100; i++)\n        out[i] = in[99-i];\n\nendmodule\n"}
+{"task_id": "countslow", "completion": "always @(posedge clk)\n    if (reset)\n        q <= 4'b0;\n    else if (slowena)\n        if (q == 9)\n            q <= 4'b0;\n        else\n            q <= q + 1;\n\nendmodule\n"}
+{"task_id": "mt2015_eq2", "completion": "assign z = (A == B);\n\nendmodule\n"}
+{"task_id": "always_case", "completion": "always @(*) begin\n    case(sel)\n        3'b000: out = data0;\n        3'b001: out = data1;\n        3'b010: out = data2;\n        3'b011: out = data3;\n        3'b100: out = data4;\n        3'b101: out = data5;\n        default: out = 4'b0;\n    endcase\nend\n\nendmodule\n"}
+{"task_id": "circuit3", "completion": "assign q = (a | b) & (c | d);\n\nendmodule\n"}
+{"task_id": "alwaysblock2", "completion": "assign out_assign = a ^ b;\n\nalways @(*) begin\n    out_always_comb = a ^ b;\nend\n\nalways @(posedge clk) begin\n    out_always_ff <= a ^ b;\nend\n\nendmodule\n"}
+{"task_id": "mt2015_muxdff", "completion": "always @(posedge clk)\n    if (L)\n        Q <= r_in;\n    else\n        Q <= q_in;\n\ninitial\n    Q = 0;\n\nendmodule\n"}
+{"task_id": "m2014_q4j", "completion": "assign sum = x + y;\n\nendmodule\n"}
+{"task_id": "norgate", "completion": "assign out = ~(a | b);\n\nendmodule\n"}
+{"task_id": "fsm3comb", "completion": "assign out = state[1] & state[0];\n\nalways @(*) begin\n    next_state[0] = in;\n    next_state[1] = (~in & state[0]) | (in & state[1] & ~state[0]);\nend\n\nendmodule\n"}
+{"task_id": "history_shift", "completion": "logic [31:0] predict_history_internal;\n\n    always_ff @(posedge clk or posedge areset) begin\n        if (areset)\n            predict_history_internal <= '0;\n        else begin\n            if (train_mispredicted)\n                predict_history_internal <= {train_history[30:0], train_taken};\n            else if (predict_valid)\n                predict_history_internal <= {predict_history_internal[30:0], predict_taken};\n        end\n    end\n\n    assign predict_history = predict_history_internal;\n\nendmodule\n"}
+{"task_id": "bugs_addsubz", "completion": "always @(*) begin\n    case(do_sub)\n        1'b0: out = a + b;\n        1'b1: out = a - b;\n    endcase\nend\n\nalways @(*) begin\n    if (out == 8'h00)\n        result_is_zero = 1'b1;\n    else\n        result_is_zero = 1'b0;\nend\n\nendmodule\n"}
+{"task_id": "truthtable1", "completion": "assign f = (~x3 & x2) | (x3 & x1);\n\nendmodule\n"}
+{"task_id": "circuit5", "completion": "always @(*) begin\n    case(c)\n        4'd0: q = b;\n        4'd1: q = e;\n        4'd2: q = a;\n        4'd3: q = d;\n        default: q = 4'hf;\n    endcase\nend\n\nendmodule\n"}
