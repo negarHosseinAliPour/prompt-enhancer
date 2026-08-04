@@ -14,7 +14,7 @@ from verilog_eval.evaluation import evaluate_functional_correctness
 def main():
     #problem_file = "verilog-eval/data/example/ExampleEval.jsonl"
     problem_file = "verilog-eval/data/VerilogEval_Machine.jsonl"
-    enhanced_sample = "outputs/enhanced_gir_samples.jsonl"
+    enhanced_sample = "outputs/enhanced_vsl_samples.jsonl"
     #enhanced_sample = "outputs/enhanced_samples.jsonl"
 
     val_output_dir = pathlib.Path("val-output")
@@ -48,7 +48,7 @@ def main():
     
     print("Evaluation Results:", results)
     
-    out_file = val_output_dir / "enhanced_gir_eval_results.json"
+    out_file = val_output_dir / "enhanced_vsl_eval_results.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4)
         
