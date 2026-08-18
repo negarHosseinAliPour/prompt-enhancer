@@ -1,0 +1,148 @@
+
+### **VSL (Verilog Synthesis Language) Grammar**
+
+You are an expert in translating English descriptions of hardware into a structured, intermediate representation called VSL. Your task is to convert the user's request into a VSL script.
+
+#### **1. Overview**
+
+VSL is a compact language for describing digital logic circuits. It is unambiguous and designed to be easily parsed by a simple script. A VSL script is a series of statements that define signals (outputs or intermediate values) and registers.
+
+#### **2. Core Syntax Rules**
+
+*   **One Statement Per Line:** Each VSL command is a single line.
+*   **NO SEMICOLONS:** Do not end any line with a semicolon `;`.
+*   **NO COMMENTS:** Do not use `//` or `/* */`.
+*   **Case-Sensitive:** All identifiers (signals, states) are case-sensitive.
+*   **Declaration Before Use:** A signal must be defined (as a port, a `REG`, or on the left side of an `=` in a previous line) before it can be used in an expression on the right side of an `=`. State names must be defined in a `STATES` block before use.
+
+#### **3. Expressions vs. Conditions**
+
+VSL makes a critical distinction between *Expressions* (which produce a value) and *Conditions* (which are used for logical tests).
+
+*   **Expressions** are used on the right-hand side of a simple assignment (e.g., `out = <expression>`).
+*   **Conditions** are used inside `COMB` blocks, `REG...PORT` blocks, and the test part of a ternary operator (`<condition> ? ... : ...`).
+
+#### **4. CRITICAL: Condition Syntax**
+
+Conditions have a very strict, simple syntax. Failure to follow these rules is the most common source of errors.
+
+*   A condition is one or more comparisons, joined by the bitwise AND operator `&`.
+*   **The equality operator in a condition is a single equals sign (`=`).**
+*   The inequality operator is `!=`.
+*   **DO NOT use the Verilog `==` operator inside conditions.**
+*   No other operators (`|`, `~`, `^`) or parentheses `()` are allowed in conditions.
+
+*Correct Condition Syntax:*
+`sel=1`
+`state=IDLE`
+`in[0]=1 & enable=1`
+`code=8'h45`
+
+*Incorrect Condition Syntax:*
+`sel == 1`  *(Wrong operator: use `=`)*
+`enable`  *(Wrong: must be a comparison, e.g., `enable=1`)*
+`state=IDLE | state=DONE` *(Wrong operator: use `&` or split into separate lines in a `COMB` block)*
+`(a=1 & b=0)` *(Wrong: no parentheses)*
+
+#### **5. Expression Syntax**
+
+Expressions are used to calculate values for assignments.
+
+*   **Operators:** VSL supports standard Verilog operators:
+    *   Bitwise: `&` (AND), `|` (OR), `~` (NOT), `^` (XOR)
+    *   Arithmetic: `+` (add), `-` (subtract)
+    *   Shift: `<<` (logical left), `>>` (logical right)
+    *   Rotate: `<<r` (rotate left), `>>r` (rotate right)
+    *   Bit-Access & Concatenation: `my_vec[5]`, `my_vec[7:4]`, `{sig1, sig2}`, `{{16{q[7]}}, q}`
+*   **Comparisons in Expressions:** The `==` and `!=` operators *can* be used in expressions, but their boolean result **cannot be directly assigned**. You **MUST** use a ternary operator to convert the result to a `1` or `0`.
+    *   *Correct:* `is_equal = (a == b) ? 1 : 0`
+    *   *Correct:* `out = { (a==b ? 1:0), (c==d ? 1:0) }`
+    *   *INCORRECT:* `is_equal = (a == b)`
+
+#### **6. Combinational Logic**
+
+**a) Simple Continuous Assignments:**
+Use for single-line logic expressions.
+*VSL:* `out = a & b`
+*VSL:* `is_state_A = (state == A) ? 1 : 0`
+
+**b) `COMB` Blocks for Complex Logic:**
+Use for priority-based logic (if/else-if/else) or case statements. The first matching condition from top to bottom determines the output. **Every `COMB` block MUST end with a wildcard `| * -> ...` branch.** Conditions follow the strict syntax from Section 4.
+
+```
+COMB <output_signal>
+  <condition1> -> <value1>
+| <condition2> -> <value2>
+| * -> <default_value>
+```
+*Example:*
+```
+COMB pos
+  in[0]=1 -> 0
+| in[1]=1 -> 1
+| * -> 0
+```
+
+#### **7. Sequential Logic (`REG` blocks)**
+
+**Syntax:** `REG <name>[<width>] @<clock> <reset> <update_logic>`
+
+*   **`<name>[width]`**: Name and optional bit-width (e.g., `q[8]`, `state`).
+*   **`@<clock>`**: Clock event (`@clk.pos` or `@clk.neg`).
+*   **`<reset>`**: Reset behavior (optional). Syntax: `signal.type->value`.
+    *   `type`: `sync` (or `syncpos`), `syncneg`, `async` (or `asyncpos`), `asyncneg`.
+    *   *Example:* `reset.sync->0` (Synchronous, active-high reset to 0).
+*   **`<update_logic>`**: How the register updates. Two styles:
+    *   **`PORT` Style (Internal Logic):** Logic is a priority-ordered list inside the `REG` block. Conditions follow the strict syntax from Section 4.
+        ```
+        REG q[8] @clk.pos PORT
+          load=1 -> data
+        | ena=1 -> q+1
+        | * -> q
+        ```
+    *   **`NEXT` Style (External Logic):** The register is explicitly updated from an intermediate signal. This is **required** for FSMs. See the `REG/NEXT` Pattern below.
+        *VSL:* `REG state[3] @clk.pos reset.sync->IDLE NEXT=next_state`
+
+#### **8. CRITICAL: The `REG` / `NEXT` Pattern**
+
+This pattern separates the sequential update (`REG`) from the combinational logic (`COMB`) that calculates the next value.
+
+**THE GOLDEN RULE:** The signal on the right-hand side of `NEXT=` (e.g., `my_next_reg`) **MUST NOT** be a module input/port. It **MUST** be an intermediate signal that you define yourself on a separate line using a simple assignment or a `COMB` block.
+
+*Correct VSL for a DFF with input `d` and output `q`:*
+```
+next_q = d
+REG q @clk.pos NEXT=next_q
+```
+
+*INCORRECT VSL (NEXT links directly to input `d`):*
+`REG q @clk.pos NEXT=d`
+
+*INCORRECT VSL (missing the definition for `next_q`):*
+`REG q @clk.pos NEXT=next_q`
+
+#### **9. Finite State Machines (FSMs)**
+
+FSMs combine `STATES`, `REG` (with `NEXT`), and `COMB` blocks.
+
+1.  **`STATES` Declaration:** At the top, declare all state names and their decimal integer encodings on a single line. Do not use Verilog-style literals here.
+    *   *Correct:* `STATES: IDLE=0, DATA=1, DONE=2`
+    *   *INCORRECT:* `STATES: IDLE=2'b00, DATA=2'b01, DONE=2'b10`
+2.  **State Register:** A `REG` using the `NEXT=next_state` style.
+3.  **Next-State Logic:** A `COMB` block that defines the `next_state` signal. Conditions must use state names (`state=IDLE`), not their values. The parser handles the substitution.
+4.  **Output Logic:** Simple assignments or `COMB` blocks. Use a ternary to check the state.
+
+*FSM Example:*
+*Description:* A simple FSM. When in state IDLE, if `in` is 1, go to DATA. Otherwise, stay in IDLE. Output `z` is 1 only in state DATA. Synchronous reset to IDLE.
+*VSL:*
+```
+STATES: IDLE=0, DATA=1
+
+REG state @clk.pos reset.sync->IDLE NEXT=next_state
+
+COMB next_state
+  state=IDLE & in=1 -> DATA
+| * -> IDLE
+
+z = (state == DATA) ? 1 : 0
+```

@@ -7,7 +7,6 @@ free-text JSON fields. Includes the parser, validator, Verilog renderer,
 and the LLM agent that generates VSL from a natural-language prompt.
 """
 
-import os
 import pathlib
 import re
 from enum import Enum
@@ -2040,8 +2039,7 @@ class VSLOutput(BaseModel):
 # (grammar.txt, next to this one) so that re-running discovery and dropping
 # in a new discovered_grammar_*.txt as grammar.txt is enough to update it,
 # with no need to touch this Python file at all.
-_GRAMMAR_FILE = pathlib.Path(os.environ.get("VSL_GRAMMAR_FILE",
-                                            pathlib.Path(__file__).parent / "grammar.txt"))
+_GRAMMAR_FILE = pathlib.Path(__file__).parent / "grammar.txt"
 try:
     VSL_GRAMMAR_AND_EXAMPLES = _GRAMMAR_FILE.read_text(encoding="utf-8")
 except FileNotFoundError:

@@ -439,17 +439,43 @@ async def _grade_code(code: str, eval_problem: dict | None, task_id: str | None)
 
 
 async def _evaluate_prompt_async(prompt_text, eval_problem, task_id, use_gir=True):
-    """VSL path: description goes into gir_agent, which outputs VSL, then
+    """First tries execution_agent directly (no VSL, no grammar) on the raw
+    description. If that already scores 1.0, we return immediately --
+    there's no reason to force a description through VSL's grammar when
+    the model can already produce correct Verilog on its own.
+
+    Only if the no-VSL attempt scores below 1.0 do we fall back to the VSL
+    path: description goes into gir_agent, which outputs VSL, then
     parse_vsl, validate_circuit, and render_verilog run -- all deterministic
     (no LLM) after that one model call.
 
-    execution_agent fallback is off for now, so we can test VSL quality
-    on its own. If VSL fails, we return score 0 instead of falling back
-    to a different path that would hide whether the problem was VSL's fault."""
+    This means VSL is evaluated on exactly the harder subset of tasks the
+    model couldn't already solve directly -- not on tasks where any
+    approach would have worked, which would make VSL's own contribution
+    hard to isolate.
+
+    If VSL also fails, we return score 0 instead of silently falling back
+    to yet another path that would hide whether the problem was VSL's fault."""
     circuit_ir = None
     vsl_text = None
 
     if use_gir:
+        # Try without VSL first.
+        no_vsl_result = await execution_agent.run(prompt_text)
+        no_vsl_code = strip_trailing_endmodule(no_vsl_result.output.internal_logic) + "\n\nendmodule\n"
+        print(f"  [{task_id}] [DEBUG] execution_agent (no-VSL first attempt) produced:\n{no_vsl_code}\n")
+
+        no_vsl_grade = await _grade_code(no_vsl_code, eval_problem, task_id)
+        print(f"  [{task_id}] [DEBUG] No-VSL first attempt score: {no_vsl_grade['score']}")
+
+        if no_vsl_grade["score"] >= 1.0:
+            print(f"  [{task_id}] [DEBUG] No-VSL attempt already passes -- skipping VSL entirely for this description.")
+            no_vsl_grade["circuit_ir"] = None
+            no_vsl_grade["vsl_text"] = None
+            return no_vsl_grade
+
+        print(f"  [{task_id}] [DEBUG] No-VSL attempt did not fully pass (score={no_vsl_grade['score']}) -- falling back to the VSL path.")
+
         gir_result = await gir_agent.run(prompt_text)
         vsl_text = gir_result.output.vsl_code
         print(f"  [{task_id}] [DEBUG] Raw VSL from model:\n{vsl_text}\n")
@@ -775,7 +801,7 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
 
     print(f"Reading tasks from {jsonl_file}... (mode={mode}, concurrency={concurrency})")
 
-    eval_file = pathlib.Path("verilog-eval/data/VerilogEval_Machine.jsonl")
+    eval_file = pathlib.Path("verilog-eval/data/VerilogEval_Human.jsonl")
     eval_problems = {}
     if eval_file.exists():
         with open(eval_file, "r", encoding="utf-8") as f:
@@ -786,8 +812,8 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
 
     output_dir = pathlib.Path("outputs")
     output_dir.mkdir(exist_ok=True)
-    output_file = output_dir / f"{mode}{'_vsl' if use_gir else ''}_samples_Machine.jsonl"
-    history_file = output_dir / f"{mode}{'_vsl' if use_gir else ''}_history_Machine.jsonl"
+    output_file = output_dir / f"{mode}{'_vsl' if use_gir else ''}_samples_Human.jsonl"
+    history_file = output_dir / f"{mode}{'_vsl' if use_gir else ''}_history_Human.jsonl"
 
     tasks_data = []
     with open(jsonl_file, "r", encoding="utf-8") as f:

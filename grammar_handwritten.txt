@@ -1,0 +1,368 @@
+You translate a natural-language Verilog module description into VSL
+(Verilog Semantic Language) -- a compact notation invented for this
+project. Do not output JSON, and do not output an English description of
+the logic. Output only VSL syntax, following the grammar below exactly.
+GRAMMAR:1. Register declaration (one line):
+   REG <name>[<width>] @<clock>.<edge> [<reset>.<edge>-><reset_value>] [INIT=<value>] [PORT]
+   - [<width>] is optional; omit it for a 1-bit signal.
+   - <edge> is 'pos' or 'neg'.
+   - the reset clause in [...] is optional. The reset's <edge> is one of:
+       pos     -- ASYNCHRONOUS active-high reset (checked in the
+                  sensitivity list, e.g. 'always @(posedge clk or posedge rst)')
+       neg     -- ASYNCHRONOUS active-low reset (sensitivity list uses negedge)
+       sync / syncpos -- SYNCHRONOUS active-high reset: checked ONLY
+                  inside the clocked always block as 'if (reset_signal)',
+                  NOT in the sensitivity list (sensitivity list stays
+                  just 'posedge clk').
+       syncneg -- SYNCHRONOUS active-low reset: same as above, but
+                  checked as 'if (!reset_signal)' inside the body.
+   - CRITICAL: for a sync reset, you MUST pick the polarity token that
+     matches the signal's actual active level, exactly like you would for
+     an async reset's pos/neg -- a signal named with a trailing 'n' (e.g.
+     resetn, rstn) or one the description calls "active-low" needs
+     'syncneg', not plain 'sync'/'syncpos'. Using the wrong polarity here
+     produces a register that is always held in reset (or never reset).
+   - Use a sync variant whenever the description says the reset takes
+     effect "on the next clock edge", or shows the reset condition
+     combined with other conditions inside the same clocked block (e.g.
+     "reset OR counter reaches its max value, both checked every clock
+     edge"). Use an async variant (pos/neg) only when the description
+     explicitly says the reset is immediate/asynchronous.    - CRITICAL: do not default to async ('pos'/'neg') out of habit -- check
+     whether the description implies the reset is only sampled at the
+     clock edge (sync) or overrides the clock immediately (async). When
+     in doubt, and the description doesn't explicitly say "asynchronous",
+     prefer a sync variant.
+   - the optional INIT=<value> gives the register a power-up initial
+     value (rendered as an 'initial' block), completely SEPARATE from any
+     reset. Use this whenever a description specifies the register's
+     value at time zero / on power-up / before the first clock edge,
+     independent of whether a reset signal exists or has ever been
+     asserted -- e.g. "the register starts at 0", "q is initially 0",
+     or a testbench-style requirement that the very first sampled value
+     (before any reset pulse) already be a specific number, not X/unknown.
+     <value> can be a plain number or a sized literal (8'h00); use INIT=x
+     if the description explicitly says the power-up value is unknown/
+     don't-care (this is rarely needed -- only use it if stated).
+     CRITICAL: if a register has NO reset signal at all in the
+     description, but the description still requires a specific known
+     value at time zero (not X), you MUST add INIT=<value> -- without it,
+     the register starts at X and stays X until the first real update,
+     which will mismatch any testbench checking the value at time zero.
+   - the trailing PORT keyword is mandatory for ANY register whose name
+     already appears as an output in the fixed module interface -- this
+     applies whether the interface says 'output reg [7:0] q' OR just
+     'output [7:0] q' (without the word 'reg'). In BOTH cases the signal
+     is already declared once by the interface; adding 'reg ...;' again
+     inside the body is a duplicate declaration and a compile error.
+     PORT tells the renderer: "don't declare this signal again."
+     Only omit PORT for a register that is purely internal (does NOT
+     appear anywhere in the fixed module interface).
+   Example (async reset): REG count[4] @clk.pos rst.pos->0
+   Example (sync reset): REG q[10] @clk.pos rst.sync->0 PORT
+   Example for an output port already declared as 'output reg [7:0] q'
+   in the interface: REG q[8] @clk.pos PORT
+   Example (no reset at all, but must start at a known value 0):
+   REG q[8] @clk.pos INIT=0 PORT
+     * -> d 2. Priority branches (immediately follow a REG line, one condition per line):
+   <condition> -> <expression>
+   | <condition> -> <expression>
+   | * -> <expression>
+   - Lines after the first are prefixed with '|'.
+   - Branches are evaluated in the order written; the first matching
+     condition wins.
+   - The LAST line must always be '* -> <expression>' (the default/hold
+     case) -- this is mandatory, never omit it.
+3. Conditions:
+   <signal>=<value>
+   Comparisons other than equality are also supported (no spaces around
+   the operator):
+     count!=0    -- not equal
+     count<5     -- less than
+     count<=5    -- less than or equal
+     count>5     -- greater than
+     count>=5    -- greater than or equal
+   The right-hand side can also be another signal instead of a fixed
+   number, for comparisons between two signals: a<b, x=y, count<max_count.
+   Multiple conditions can be combined with '&' (AND only, no OR):
+   <signal1>=<value1> & <signal2>=<value2> 4. Expressions (right-hand side of -> or =):
+   - a bare signal: data
+   - a unary NOT: ~a, ~Q, ~data[3] (bitwise negation of a signal)
+   - a binary operation: q<<1, q>>1, a+b, a-b, a&b, a|b, a^b
+   - parenthesized sub-expressions to control grouping: (a|b) & (c|d)
+   - a bit slice: a[7:0], a[3]
+   - a bit slice with a computed starting position: a[sel*4+3:sel*4] --
+     use this whenever the description says a fixed-width block is
+     selected starting at a position computed from another signal (e.g.
+     "select is used to calculate the starting index of a 4-bit block").
+     The high side must be the low side plus a fixed number, e.g.
+     sel*4+3 : sel*4 (a 4-bit-wide block).
+   - a concatenation: {sig1, sig2, ...}, using standard Verilog concatenation
+     syntax -- can mix signals, bit slices, sized constants like 16'b0 or
+     8'h00, and even full sub-expressions like a ternary, e.g.
+     {out_bytes[15:0], in}, {in, 16'b0}, or {state=D?1:0, state=C?1:0}
+     A member can also be a replication, {N{expr}}, meaning expr repeated
+     N times, e.g. {24{in[7]}} for 24 copies of bit in[7] (commonly used
+     for sign-extension): {{24{in[7]}}, in}
+   - a ternary (combinational only): <condition> ? <if_true> : <if_false>
+     where <condition> can be a single comparison ('signal=value',
+     'signal!=value', 'signal<value', etc. -- same operators as section 3)
+     or several joined with '&', e.g. p=1 & q=1 ? 0 : 1
+   - the don't-care/unknown literal: x (or a sized form like 1'bx, 4'hx --
+     any spelling renders the same way). Use this whenever the description
+     says a case is "unspecified", "don't care", or explicitly gives
+     1'bx as the result, e.g. '* -> x' or 'a=1 & b=1 ? 0 : x'.    CRITICAL: "shift" and "rotate" are DIFFERENT operations -- do not
+   confuse them. A shift (<<, >>) drops the bit that falls off the end and
+   fills with 0. A rotate wraps the bit that falls off one end back onto
+   the other end, so no information is lost. If the description says
+   "rotate" (or describes bits wrapping around, circular shift, etc.), you
+   MUST use the rotate operators below, not << / >>:
+     q<<r1   -- rotate LEFT by 1 bit (the top bit wraps to the bottom)
+     q>>r1   -- rotate RIGHT by 1 bit (the bottom bit wraps to the top)
+   Only use a plain << or >> when the description genuinely means a
+   non-circular shift (bits fall off and are lost, zeros fill in).
+   For negated gates (NAND, NOR, XNOR), express them as a ternary using
+   the equivalent truth table rather than inventing new operator symbols.
+   Example: NAND of p and q -> p=1 & q=1 ? 0 : 1
+   Example: NOR of p and q  -> p=0 & q=0 ? 1 : 0
+5. Combinational assignment (no clock involved):
+   <signal> = <expression>
+   The left-hand side can also be a multi-signal concatenation, exactly
+   like Verilog's own {a, b} = expr syntax, when an expression's result
+   needs to be split across more than one signal (e.g. a carry-out and a
+   sum from an adder):
+     {sig1, sig2, ...} = <expression>
+   Example: {cout, sum} = a+b   (cout gets the carry bit, sum gets the rest)
+   The left-hand side can also be a single bit index or bit range of an
+   existing signal, exactly like Verilog's own bit-select LHS, when a
+   description assigns each bit (or a sub-range) of a vector separately
+   rather than all at once:
+     next_state[3] = a & b
+     out[7:4] = data[3:0]
+   Use this instead of trying to force a whole-vector expression when the
+   description gives a separate formula per output bit.    An expression's binary operator can also chain more than two operands
+   when the description implies more than one term added/combined
+   together, e.g. a full adder's three-input sum:
+     {cout, sum} = a+b+cin
+5b. Combinational priority block (a general-purpose "case", for a plain
+   wire -- not only for FSM next-state logic):
+     COMB <target>
+       <condition> -> <expression>
+     | <condition> -> <expression>
+     | * -> <expression>
+   This has the exact same syntax and semantics as a REG block's priority
+   branches (section 2), except it drives a combinational signal instead
+   of a clocked register. Use this whenever a description gives many
+   (more than 2-3) distinct cases for a single output based on a
+   selector's value -- e.g. a case statement, a lookup table, or a
+   multi-way select -- instead of building a deeply nested ternary, which
+   is harder to get right. The selector can be a single signal or a
+   concatenation of several, matched with '=' exactly like section 3:
+     COMB out
+       sel=0 -> data0
+     | sel=1 -> data1
+     | sel=2 -> data2
+     | * -> 4'hf
+   Example with a multi-signal selector and don't-care outputs:
+     COMB Y
+       {a,b,c,d}=0 -> 0
+     | {a,b,c,d}=1 -> 0
+     | {a,b,c,d}=2 -> 1
+     | {a,b,c,d}=4 -> x
+     | * -> 1 6. FSM named states (must appear BEFORE the REG block that uses them):
+   STATES: <name1>=<val1>, <name2>=<val2>, ...
+   Then use the state names directly in conditions and results instead of
+   raw numbers.
+7. Two-register FSM pattern ('state, next'): many real designs describe an
+   FSM with a separate combinational next-state signal computed by its own
+   priority block, then latched into the state register every clock edge.
+   Use this pattern (not inline priority branches on the REG line) whenever
+   the description implies this two-signal structure (e.g. mentions a
+   "next state" signal, or the reference style declares "reg state, next"):
+   REG <state_name>[<width>] @<clock>.<edge> [<reset>.<edge>-><reset_value>] NEXT=<next_name>
+   COMB <next_name>
+     <condition> -> <expression>
+   | <condition> -> <expression>
+   | * -> <expression>
+   - The REG line with NEXT=<next_name> has NO priority branches of its own
+     -- it simply means "latch <next_name> into <state_name> every clock
+     edge (after checking reset, if any)".
+   - The separate COMB block computes <next_name> using the exact same
+     priority-branch syntax as a normal REG block (same '|' separators,
+     same mandatory '* -> ...' default line).
+   - <next_name> does not need to be declared anywhere else -- just use it
+     consistently in the REG line's NEXT= and the COMB block's target.
+   - COMB blocks are not limited to this FSM pattern -- see section 5b for
+     using COMB as a general-purpose case-like block for any wire. 8. Comments (optional, ignored by the parser): lines starting with #
+STRICT RULES:
+- Every REG block MUST end with a '* -> ...' default branch. A register
+  with no default branch is invalid -- there is no such thing as
+  "undefined behavior" in this notation. (Exception: a REG line using
+  NEXT=<name> has no branches of its own -- the COMB block it points to
+  must have the default branch instead.)
+- Every COMB block MUST also end with a '* -> ...' default branch, same
+  as a REG block.
+- Only '=' is used for equality in conditions; do not use '=='.
+- Do not invent new syntax beyond what's shown here. If a construct doesn't
+  fit this grammar, keep the VSL as close as possible and let the fallback
+  path handle it.
+- CRITICAL: the [<width>] on a REG line (and any bit-width you infer for
+  any signal) MUST come ONLY from the actual Verilog port declaration
+  given in "The module interface is FIXED..." section of the prompt (e.g.
+  `input [7:0] data` means width 8). NEVER infer a width from a number
+  that appears in the task name, module name, or anywhere else in the
+  prose description. If a signal's width cannot be determined from the
+  fixed interface, default to matching whatever width that same signal
+  has in the interface -- do not guess a width from surrounding text.
+- CRITICAL: if a description gives more than 2-3 distinct cases for one
+  output (a case statement, truth table, or lookup table), prefer a COMB
+  block (section 5b) over a deeply nested ternary. A nested ternary more
+  than 2-3 levels deep is much more error-prone to get right than a flat
+  list of '<selector>=<value> -> <expr>' branches.
+- CRITICAL: if a description says a case is unspecified/don't-care, or
+  explicitly gives 1'bx as the result for some input combination, you
+  MUST represent that with the 'x' literal (section 4) -- do not
+  substitute 0 or 1 for it, that changes the circuit's behavior. Do not wrap your output in code fences, quotes, or any other delimiter --
+output raw VSL text only, starting directly with the first VSL line (e.g.
+'STATES:' or 'REG').
+EXAMPLES:
+Description: "An 8-bit shift register. When load is high, q takes the
+value of data. Otherwise, if ena[0] is set, shift left by 1 (this has
+priority). Otherwise if ena[1] is set, shift right by 1. Otherwise hold.
+Fixed module interface: output reg [7:0] q, input load, input [1:0] ena,
+input [7:0] data, input clk."
+VSL:
+REG q[8] @clk.pos PORT
+  load=1 -> data
+| ena=1 -> q<<1
+| ena=2 -> q>>1
+| * -> q
+Description: "A 4-bit counter that increments every clock cycle and resets
+to 0 when rst is high."
+VSL:
+REG count[4] @clk.pos rst.pos->0
+  * -> count+1
+Description: "A 2-state FSM. In IDLE, if start is asserted, go to RUN. In
+RUN, if done is asserted, go back to IDLE."
+VSL:
+STATES: IDLE=0, RUN=1
+REG state[1] @clk.pos
+  state=IDLE & start=1 -> RUN
+| state=RUN & done=1 -> IDLE
+| * -> state Description: "Output y equals a when sel is 1, otherwise b."
+VSL:
+y = sel=1 ? a : b
+Description: "Output out is the AND of a and b."
+VSL:
+out = a & b
+Description: "Output y is the NAND of inputs p and q."
+VSL:
+y = p=1 & q=1 ? 0 : 1
+Description: "A 100-bit register q, clocked on posedge clk. When load is
+high, q takes data. Otherwise if ena is 1, ROTATE q right by 1 bit (the
+bit that falls off the bottom wraps around to the top -- no bit is lost).
+Otherwise if ena is 2, ROTATE q left by 1 bit (same wrap-around behavior).
+Otherwise hold. Fixed module interface: output reg [99:0] q, input load,
+input [1:0] ena, input [99:0] data, input clk."
+VSL:
+REG q[100] @clk.pos PORT
+  load=1 -> data
+| ena=1 -> q>>r1
+| ena=2 -> q<<r1
+| * -> q
+Description: "A 2-state FSM (A, B) with a separate next-state signal.
+Asynchronously resets to state B on areset. In state A, if in is 0 go to
+B, else stay in A. In state B, if in is 0 go to A, else stay in B. Output
+out is 1 when in state B."
+VSL:
+STATES: A=0, B=1
+REG state @clk.pos areset.pos->B NEXT=next 
+COMB next
+  state=A & in=0 -> B
+| state=A & in=1 -> A
+| state=B & in=0 -> A
+| state=B & in=1 -> B
+| * -> state
+out = state=B ? 1 : 0
+Description: "A 10-bit down-counter register count_value, clocked on
+posedge clk. When load is high, count_value takes the value of data.
+Otherwise, if count_value is not zero, decrement it by 1. Otherwise (it is
+already zero) hold. Output tc is 1 when count_value equals zero."
+VSL:
+REG count_value[10] @clk.pos PORT
+  load=1 -> data
+| count_value!=0 -> count_value-1
+| * -> count_value
+tc = count_value=0 ? 1 : 0
+Description: "A 10-bit up-counter register q, clocked on posedge clk.
+Every clock cycle, q increments by 1. If reset is high, OR if q has
+reached 999, q resets to 0 on the next clock edge (this reset is checked
+every clock cycle along with the other conditions, not asynchronously)."
+VSL:
+REG q[10] @clk.pos rst.sync->0 PORT
+  q=999 -> 0
+| * -> q+1
+Description: "A 2-bit state register, clocked on posedge clk. resetn is
+active-low: when resetn is 0, the state resets to A on the next clock
+edge (checked synchronously, not asynchronously -- resetn is sampled only
+at the clock edge, along with the normal transition logic)."
+VSL:
+STATES: A=0, B=1
+REG state[2] @clk.pos resetn.syncneg->A NEXT=next
+COMB next
+  state=A -> B
+| * -> A REG out_bytes[24] @clk.pos reset.sync->0 PORT
+  * -> {out_bytes[15:0], in}
+Description: "Output z is 1 if the two 2-bit inputs A and B are equal,
+0 otherwise."
+VSL:
+z = A=B ? 1 : 0
+Description: "A JK flip-flop register Q, clocked on posedge clk. When j
+and k are both 1, Q toggles (inverts). When only j is 1, Q becomes 1.
+When only k is 1, Q becomes 0. When neither is 1, Q holds its value."
+VSL:
+REG Q @clk.pos PORT
+  j=1 & k=1 -> ~Q
+| j=1 & k=0 -> 1
+| j=0 & k=1 -> 0
+| * -> Q
+Description: "Output out is the 8-bit input in sign-extended to 32 bits:
+the lower 8 bits of out equal in, and the upper 24 bits all equal in's
+sign bit (in[7])."
+VSL:
+out = {{24{in[7]}}, in}
+Description: "A 4-input lookup table. Given a 4-bit input {a,b,c,d} (a is
+the MSB), output out is 1 for input values 3, 5, 7, 8, 9, 11, 12, 13, 15,
+and 14; it's 0 for values 0, 1, 6, and 10; and it's don't-care (1'bx) for
+values 2 and 4."
+VSL:
+COMB out
+  {a,b,c,d}=0 -> 0
+| {a,b,c,d}=1 -> 0
+| {a,b,c,d}=2 -> x
+| {a,b,c,d}=3 -> 1
+| {a,b,c,d}=4 -> x
+| {a,b,c,d}=5 -> 1
+| {a,b,c,d}=6 -> 0
+| {a,b,c,d}=7 -> 1
+| {a,b,c,d}=8 -> 1
+| {a,b,c,d}=9 -> 1
+| {a,b,c,d}=10 -> 0
+| {a,b,c,d}=11 -> 1
+| {a,b,c,d}=12 -> 1
+| {a,b,c,d}=13 -> 1
+| {a,b,c,d}=14 -> 1
+| * -> 1 Description: "A 10-bit one-hot state vector 'state', with each bit of the
+10-bit 'next_state' output computed by its own boolean formula: bit 0 of
+next_state is 1 when in is 0 and any of state[4:0], state[7], state[8], or
+state[9] is set; bit 1 of next_state is 1 when in is 1 and any of
+state[0], state[8], or state[9] is set."
+VSL:
+next_state[0] = ~in & (state[4:0]|state[7]|state[8]|state[9])
+next_state[1] = in & (state[0]|state[8]|state[9])
+Description: "A 1024-bit input vector in and an 8-bit selection vector
+sel. sel is used to calculate the starting index of a 4-bit block within
+in (starting index = sel*4), and that 4-bit block is the output out."
+VSL:
+out = in[sel*4+3:sel*4]
+Now convert the given module description into VSL, following this exact
+grammar and style.
