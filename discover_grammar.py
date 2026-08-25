@@ -56,10 +56,19 @@ class DiscoveryVSLOutput(BaseModel):
     vsl_code: str = Field(..., description="Circuit logic written in VSL, following the grammar in the system prompt.")
 
 
+import os as _os
+if _os.environ.get("VSL_MODEL") == "gpt-oss":
+    from pydantic_ai import NativeOutput as _NativeOutput
+    _discovery_output_type = _NativeOutput(GrammarProposal)
+    _candidate_output_type = _NativeOutput(DiscoveryVSLOutput)
+else:
+    _discovery_output_type = GrammarProposal
+    _candidate_output_type = DiscoveryVSLOutput
+
 discovery_agent = Agent(
     MODEL,
     name="Grammar Discovery Agent",
-    output_type=GrammarProposal,
+    output_type=_discovery_output_type,
     model_settings={"temperature": 0.3},
     system_prompt=(
         "Design a compact grammar (VSL) that lets a language model translate "
@@ -135,7 +144,7 @@ async def _try_one(task_id, description, module_interface, grammar_text) -> dict
     candidate_agent = Agent(
         MODEL,
         name="Candidate GIR Agent",
-        output_type=DiscoveryVSLOutput,
+        output_type=_candidate_output_type,
         model_settings={"temperature": 0},
         system_prompt=grammar_text,
     )
@@ -147,17 +156,20 @@ async def _try_one(task_id, description, module_interface, grammar_text) -> dict
 
     try:
         ir = parse_vsl(vsl_text, module_interface=module_interface)
-    except VSLParseError as e:
-        return {"task_id": task_id, "ok": False, "stage": "parse", "error": str(e), "vsl_text": vsl_text}
+    except (VSLParseError, Exception) as e:
+        return {"task_id": task_id, "ok": False, "stage": "parse", "error": f"{type(e).__name__}: {e}", "vsl_text": vsl_text}
 
-    problems = validate_circuit(ir)
+    try:
+        problems = validate_circuit(ir)
+    except Exception as e:
+        return {"task_id": task_id, "ok": False, "stage": "validate", "error": f"{type(e).__name__}: {e}", "vsl_text": vsl_text}
     if problems:
         return {"task_id": task_id, "ok": False, "stage": "validate", "error": "; ".join(problems), "vsl_text": vsl_text}
 
     try:
         render_verilog(ir)
-    except ValidationError as e:
-        return {"task_id": task_id, "ok": False, "stage": "render", "error": str(e), "vsl_text": vsl_text}
+    except Exception as e:
+        return {"task_id": task_id, "ok": False, "stage": "render", "error": f"{type(e).__name__}: {e}", "vsl_text": vsl_text}
 
     return {"task_id": task_id, "ok": True, "stage": "done", "error": None, "vsl_text": vsl_text}
 
@@ -287,7 +299,16 @@ async def run_discovery(
         if grammar_text:
             prompt_parts += ["Your previous grammar proposal:", grammar_text]
 
-        proposal_result = await discovery_agent.run(prompt_parts)
+        for _attempt in range(1, 8):
+            try:
+                proposal_result = await discovery_agent.run(prompt_parts)
+                break
+            except Exception as e:
+                if _attempt == 7:
+                    raise
+                wait_s = min(5 * _attempt, 30)
+                print(f"[RETRY] discovery_agent.run failed (attempt {_attempt}/7): {e}. Retrying in {wait_s}s...")
+                await asyncio.sleep(wait_s)
         grammar_text = proposal_result.output.grammar_text
         reasoning = proposal_result.output.reasoning
         print(f"Discovery agent reasoning: {reasoning[:300]}")
