@@ -15,6 +15,7 @@ import sys
 import typer
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
+from types import SimpleNamespace
 
 from vsl_core import (
     MODEL,
@@ -33,6 +34,71 @@ from vsl_core import (
 pass_threshold = 1
 max_rounds = 3
 sys.path.append(os.path.abspath("verilog-eval"))
+
+#--retry helper: absorb transient model/server errors (e.g. Gemini 503
+# "UNAVAILABLE") so a single flaky request doesn't skip the whole task.
+_RETRYABLE_MARKERS = ("503", "UNAVAILABLE", "overloaded", "RESOURCE_EXHAUSTED", "429",
+                      "Exceeded maximum output retries", "<|channel|>",
+                      "Connection error")
+
+
+def _is_retryable_error(exc: Exception) -> bool:
+    text = f"{type(exc).__name__}: {exc}"
+    return any(marker in text for marker in _RETRYABLE_MARKERS)
+
+
+async def run_agent_with_retry(agent, agent_input, *, task_id: str | None = None,
+                                label: str = "", max_retries: int = 7,
+                                base_delay: float = 5.0, max_delay: float = 60.0):
+    """Wraps agent.run(...) with retry+backoff on transient server errors
+    (503/UNAVAILABLE/overloaded/429). Non-retryable errors are re-raised
+    immediately. Delay doubles each attempt, capped at max_delay, so a
+    longer server outage (a few minutes) is absorbed instead of just a
+    single brief blip. After max_retries failed attempts, the last
+    exception is re-raised so the caller's existing error handling still
+    applies.
+
+    (A previous version of this wrapped every attempt in
+    asyncio.wait_for() to also catch a silently-hung request. That was
+    reverted -- cancelling an in-flight request from the outside doesn't
+    reliably release the underlying HTTP connection, which risked
+    exhausting the client's connection pool and made things slower, not
+    safer. If a truly hung request turns out to be a real recurring
+    problem, the right fix is a timeout on the HTTP client itself, not a
+    wrapper here.)"""
+    attempt = 0
+    while True:
+        try:
+            return await agent.run(agent_input)
+        except Exception as exc:
+            attempt += 1
+            if not _is_retryable_error(exc) or attempt > max_retries:
+                raise
+            delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+            tag = f"[{task_id}] " if task_id else ""
+            print(f"  {tag}[RETRY] transient error on {label or 'agent call'} "
+                  f"(attempt {attempt}/{max_retries}): {exc}. "
+                  f"Retrying in {delay:.0f}s...")
+            await asyncio.sleep(delay)
+
+
+def _ck_strip(d: dict) -> dict:
+    """Checkpoint payloads are JSON, but circuit_ir isn't JSON-serializable
+    and isn't needed to resume -- drop it before saving."""
+    return {k: v for k, v in d.items() if k != "circuit_ir"}
+
+
+def _ck_save(checkpoint_path, payload: dict) -> None:
+    if checkpoint_path is None:
+        return
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint_path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _ck_load(checkpoint_path):
+    if checkpoint_path is None or not checkpoint_path.exists():
+        return None
+    return json.loads(checkpoint_path.read_text(encoding="utf-8"))
 
 #--output types
 
@@ -56,12 +122,26 @@ class VerilogCodeOutput(BaseModel):
                                  DO NOT include the module declaration header and DO NOT include the 'endmodule' keyword.")
 
 #--agents
+import os as _os_for_model_check
+
+def _out(cls):
+    """Wraps a structured output type for gpt-oss compatibility: gpt-oss on
+    Vertex doesn't support forced tool calling (pydantic_ai's default
+    strategy for structured output), so use NativeOutput instead when
+    VSL_MODEL=gpt-oss is set. Gemini keeps using the default (tool-based)
+    strategy, unaffected."""
+    if _os_for_model_check.environ.get("VSL_MODEL") == "gpt-oss":
+        from pydantic_ai import NativeOutput
+        return NativeOutput(cls)
+    return cls
+
 
 reworded_agent = Agent(
     MODEL,
     name="Reworded Agent",
-    output_type=EnhancedPromptOutput,
-    model_settings={"temperature": 0},
+    output_type=_out(EnhancedPromptOutput),
+    model_settings={"temperature": 0, "max_tokens": 8192},
+    retries=3,
     system_prompt=("You are a prompt rewording agent. Your task is to take an original prompt "
         "and reword it to be more structured, adding constraints and improvements "
         "where the original is vague or incomplete — things like output format, "
@@ -94,8 +174,9 @@ reworded_agent = Agent(
 score_agent = Agent(
     MODEL,
     name="Score Agent",
-    output_type=scoreOutput,
-    model_settings={"temperature": 0},
+    output_type=_out(scoreOutput),
+    model_settings={"temperature": 0, "max_tokens": 8192},
+    retries=3,
     system_prompt=("You are a strict judge of reworded prompts. You'll be given the "\
     "original prompt and Revised version rewording of it. Score the Revised version: "\
     "from 0.0 to 1.0, based on three things: does it stay true to what the "\
@@ -109,8 +190,9 @@ score_agent = Agent(
 reviser_agent = Agent(
     MODEL,
     name="Reviser Agent",
-    output_type=RevisedPromptOutput,
-    model_settings={"temperature": 0},
+    output_type=_out(RevisedPromptOutput),
+    model_settings={"temperature": 0, "max_tokens": 8192},
+    retries=3,
     system_prompt=("You are a prompt revision agent. You'll get the original prompt, "
         "the current version of the prompt, the ACTUAL Verilog code that was "
         "generated from that prompt, and the real result of compiling/simulating "
@@ -160,8 +242,9 @@ reviser_agent = Agent(
 execution_agent = Agent(
     MODEL,
     name="Execution Agent",
-    output_type=VerilogCodeOutput,
-    model_settings={"temperature": 0},
+    output_type=_out(VerilogCodeOutput),
+    model_settings={"temperature": 0, "max_tokens": 8192},
+    retries=3,
     system_prompt=(
         "You are an expert Verilog code generator and completion assistant. "
         "Given a detailed prompt describing a Verilog module, your task is to output "
@@ -171,7 +254,22 @@ execution_agent = Agent(
         "DO NOT include the module declaration or the `endmodule` keyword in your response. "
         "Do not include markdown code fences (no ```), do not include any explanation, "
         "comments about your reasoning, or extra text. "
-        "Your output must be valid, compilable Verilog code for the module's internal logic and nothing else."
+        "Your output must be valid, compilable Verilog code for the module's internal logic and nothing else.\n\n"
+        "CRITICAL -- PORT TYPES ARE FIXED BY THE INTERFACE, YOU CANNOT REDECLARE THEM:\n"
+        "Every port listed in the module interface already has a fixed net/variable type "
+        "based on exactly how it was declared there:\n"
+        "  - `output <name>` or `output [N:M] <name>` (no `reg` keyword) is a NET (wire). "
+        "You may only drive it with a continuous `assign` statement. NEVER write "
+        "`reg <name>;` or `reg [N:M] <name>;` for it inside your body -- the interface "
+        "already declared it as a net, and redeclaring it will cause a "
+        "'already declared in this scope' compile error.\n"
+        "  - `output reg <name>` (the `reg` keyword IS present) is already a variable. "
+        "You may assign to it directly inside `always` blocks. Do NOT add another "
+        "`reg` declaration for it either -- it's already declared by the interface.\n"
+        "If the behavior you need to implement for a wire-type output would normally "
+        "call for procedural logic (an always block), implement the logic using an "
+        "internal reg with a DIFFERENT name, then drive the actual output port with a "
+        "continuous `assign output_name = internal_reg_name;` statement instead."
     ),
     )
 
@@ -297,11 +395,14 @@ def parse_pass_fraction(error_message: str) -> float:
     return 0.3
 
 
-def check_correctness_with_details(problem: dict, completion: str, timeout: float, completion_id: int = 0) -> dict:
-    """Does the same check as verilog_eval's check_correctness, but
-    keeps the raw simulator output too (not just a pass/fail summary).
-    This way the testbench's own $display details make it to the reviser."""
-    import multiprocessing
+def _grading_worker(problem: dict, completion: str, timeout: float, result) -> None:
+    """The actual iverilog/vvp run, done in its own process so a hung or
+    crashing simulation can't take down the caller.
+
+    Deliberately a MODULE-LEVEL function (not a closure) taking every
+    input as an explicit argument, so it can be pickled and run with the
+    "spawn" start method -- see the comment on check_correctness_with_details
+    for why that matters."""
     import re as _re
     import subprocess as _subprocess
     from threading import Timer as _Timer
@@ -309,79 +410,95 @@ def check_correctness_with_details(problem: dict, completion: str, timeout: floa
         create_tempdir, reliability_guard, swallow_io, time_limit, TimeoutException,
     )
 
-    def unsafe_execute(result):
-        with create_tempdir():
-            import os
-            import shutil
-            rmtree = shutil.rmtree
-            rmdir = os.rmdir
-            chdir = os.chdir
+    with create_tempdir():
+        import os
+        import shutil
+        rmtree = shutil.rmtree
+        rmdir = os.rmdir
+        chdir = os.chdir
 
-            reliability_guard()
+        reliability_guard()
 
-            verilog_test = problem["test"] + "\n" + problem["prompt"] + "\n" + completion
-            with open("{}.sv".format(problem["task_id"]), "w") as f:
-                f.write(verilog_test)
+        verilog_test = problem["test"] + "\n" + problem["prompt"] + "\n" + completion
+        with open("{}.sv".format(problem["task_id"]), "w") as f:
+            f.write(verilog_test)
 
-            try:
-                with swallow_io():
-                    with time_limit(timeout):
-                        cmd = ("iverilog -Wall -Winfloop -Wno-timescale -g2012 "
-                               "-s tb -o test.vvp {}.sv; vvp -n test.vvp".format(problem["task_id"]))
-                        p = _subprocess.Popen(cmd, shell=True, stdout=_subprocess.PIPE, stderr=_subprocess.PIPE)
-                        timer = _Timer(timeout, p.kill)
+        try:
+            with swallow_io():
+                with time_limit(timeout):
+                    cmd = ("iverilog -Wall -Winfloop -Wno-timescale -g2012 "
+                           "-s tb -o test.vvp {}.sv; vvp -n test.vvp".format(problem["task_id"]))
+                    p = _subprocess.Popen(cmd, shell=True, stdout=_subprocess.PIPE, stderr=_subprocess.PIPE)
+                    timer = _Timer(timeout, p.kill)
+                    try:
+                        timer.start()
+                        out, err = p.communicate()
+                    finally:
+                        timer.cancel()
+
+                    out, err = out.decode("utf-8"), err.decode("utf-8")
+
+                    vcd_text = ""
+                    if os.path.exists("wave.vcd"):
                         try:
-                            timer.start()
-                            out, err = p.communicate()
-                        finally:
-                            timer.cancel()
+                            with open("wave.vcd", "r", errors="replace") as vf:
+                                vcd_text = vf.read()
+                        except OSError:
+                            vcd_text = ""
 
-                        out, err = out.decode("utf-8"), err.decode("utf-8")
-
-                        vcd_text = ""
-                        if os.path.exists("wave.vcd"):
-                            try:
-                                with open("wave.vcd", "r", errors="replace") as vf:
-                                    vcd_text = vf.read()
-                            except OSError:
-                                vcd_text = ""
-
-                        match = _re.search(r"Mismatches: ([0-9]*) in ([0-9]*) samples", out)
-                        if match:
-                            # a valid sim result means the code actually compiled and ran,
-                            # even if iverilog wrote a warning to stderr
-                            cor, tot = [int(i) for i in match.groups()]
-                            if cor == 0:
-                                result.append(("passed", out, err, vcd_text))
-                            else:
-                                result.append((f"failed: {cor} out of {tot} samples.", out, err, vcd_text))
-                        elif "syntax error" in err:
-                            result.append(("failed: syntax error.", out, err, vcd_text))
-                        elif len(err) > 0:
-                            result.append(("failed: compile error.", out, err, vcd_text))
+                    match = _re.search(r"Mismatches: ([0-9]*) in ([0-9]*) samples", out)
+                    if match:
+                        # a valid sim result means the code actually compiled and ran,
+                        # even if iverilog wrote a warning to stderr
+                        cor, tot = [int(i) for i in match.groups()]
+                        if cor == 0:
+                            result.append(("passed", out, err, vcd_text))
                         else:
-                            result.append(("failed: info string not matched.", out, err, vcd_text))
-            except TimeoutException:
+                            result.append((f"failed: {cor} out of {tot} samples.", out, err, vcd_text))
+                    elif "syntax error" in err:
+                        result.append(("failed: syntax error.", out, err, vcd_text))
+                    elif len(err) > 0:
+                        result.append(("failed: compile error.", out, err, vcd_text))
+                    else:
+                        result.append(("failed: info string not matched.", out, err, vcd_text))
+        except TimeoutException:
+            result.append(("timed out", "", "", ""))
+        except BaseException as e:
+            result.append((f"failed: {e}", "", "", ""))
+
+        shutil.rmtree = rmtree
+        os.rmdir = rmdir
+        os.chdir = chdir
+
+
+
+_grading_ctx = multiprocessing.get_context("spawn")
+
+
+def check_correctness_with_details(problem: dict, completion: str, timeout: float, completion_id: int = 0) -> dict:
+    """Does the same check as verilog_eval's check_correctness, but
+    keeps the raw simulator output too (not just a pass/fail summary).
+    This way the testbench's own $display details make it to the reviser."""
+    manager = _grading_ctx.Manager()
+    try:
+        result = manager.list()
+        p = _grading_ctx.Process(target=_grading_worker, args=(problem, completion, timeout, result))
+        p.start()
+        try:
+            p.join(timeout=timeout + 1)
+            if p.is_alive():
+                p.kill()
+                p.join()
+
+            if not result:
                 result.append(("timed out", "", "", ""))
-            except BaseException as e:
-                result.append((f"failed: {e}", "", "", ""))
 
-            shutil.rmtree = rmtree
-            os.rmdir = rmdir
-            os.chdir = chdir
+            summary, raw_stdout, raw_stderr, vcd_text = result[0]
+        finally:
+            p.close() if not p.is_alive() else None
+    finally:
+        manager.shutdown()
 
-    manager = multiprocessing.Manager()
-    result = manager.list()
-    p = multiprocessing.Process(target=unsafe_execute, args=(result,))
-    p.start()
-    p.join(timeout=timeout + 1)
-    if p.is_alive():
-        p.kill()
-
-    if not result:
-        result.append(("timed out", "", "", ""))
-
-    summary, raw_stdout, raw_stderr, vcd_text = result[0]
     mismatch_diagnostic = ""
     if summary != "passed" and raw_stdout and vcd_text:
         try:
@@ -400,6 +517,7 @@ def check_correctness_with_details(problem: dict, completion: str, timeout: floa
     }
 
 
+
 async def _grade_code(code: str, eval_problem: dict | None, task_id: str | None):
     """Shared grading logic, used by both the VSL path and the execution_agent path."""
     if eval_problem is None:
@@ -412,7 +530,23 @@ async def _grade_code(code: str, eval_problem: dict | None, task_id: str | None)
         }
 
     try:
-        test_result = check_correctness_with_details(problem=eval_problem, completion=code, timeout=10.0, completion_id=0)
+        # check_correctness_with_details() is synchronous and spends most of
+        # its time in a blocking p.join(); run it in a worker thread so it
+        # doesn't stall the whole asyncio event loop (and every other
+        # concurrent task) for the duration of each grading call.
+
+        test_result = await asyncio.wait_for(
+            asyncio.to_thread(
+                check_correctness_with_details, problem=eval_problem, completion=code, timeout=10.0, completion_id=0
+            ),
+            timeout=45.0,
+        )
+    except asyncio.TimeoutError:
+        return {"code": code, "score": 0.0,
+                "feedback": "Grading harness hard-timed-out after 45s (likely a stuck "
+                             "Manager()/subprocess spawn) -- treating as a failed attempt "
+                             "so the caller's retry logic can re-attempt.",
+                "gradeable": True}
     except Exception as e:
         return {"code": code, "score": 0.0, "feedback": f"Execution harness raised an exception: {e}", "gradeable": True}
 
@@ -438,45 +572,32 @@ async def _grade_code(code: str, eval_problem: dict | None, task_id: str | None)
     return {"code": code, "score": score, "feedback": feedback, "gradeable": True}
 
 
-async def _evaluate_prompt_async(prompt_text, eval_problem, task_id, use_gir=True):
-    """First tries execution_agent directly (no VSL, no grammar) on the raw
-    description. If that already scores 1.0, we return immediately --
-    there's no reason to force a description through VSL's grammar when
-    the model can already produce correct Verilog on its own.
-
-    Only if the no-VSL attempt scores below 1.0 do we fall back to the VSL
-    path: description goes into gir_agent, which outputs VSL, then
-    parse_vsl, validate_circuit, and render_verilog run -- all deterministic
-    (no LLM) after that one model call.
-
-    This means VSL is evaluated on exactly the harder subset of tasks the
-    model couldn't already solve directly -- not on tasks where any
-    approach would have worked, which would make VSL's own contribution
-    hard to isolate.
-
-    If VSL also fails, we return score 0 instead of silently falling back
-    to yet another path that would hide whether the problem was VSL's fault."""
+async def _evaluate_prompt_async(prompt_text, eval_problem, task_id, use_gir=True, force_vsl=False):
+    
     circuit_ir = None
     vsl_text = None
 
     if use_gir:
-        # Try without VSL first.
-        no_vsl_result = await execution_agent.run(prompt_text)
-        no_vsl_code = strip_trailing_endmodule(no_vsl_result.output.internal_logic) + "\n\nendmodule\n"
-        print(f"  [{task_id}] [DEBUG] execution_agent (no-VSL first attempt) produced:\n{no_vsl_code}\n")
+        if not force_vsl:
+            # Try without VSL first.
+            no_vsl_result = await run_agent_with_retry(execution_agent, prompt_text, task_id=task_id, label="execution_agent (no-VSL first attempt)")
+            no_vsl_code = strip_trailing_endmodule(no_vsl_result.output.internal_logic) + "\n\nendmodule\n"
+            print(f"  [{task_id}] [DEBUG] execution_agent (no-VSL first attempt) produced:\n{no_vsl_code}\n")
 
-        no_vsl_grade = await _grade_code(no_vsl_code, eval_problem, task_id)
-        print(f"  [{task_id}] [DEBUG] No-VSL first attempt score: {no_vsl_grade['score']}")
+            no_vsl_grade = await _grade_code(no_vsl_code, eval_problem, task_id)
+            print(f"  [{task_id}] [DEBUG] No-VSL first attempt score: {no_vsl_grade['score']}")
 
-        if no_vsl_grade["score"] >= 1.0:
-            print(f"  [{task_id}] [DEBUG] No-VSL attempt already passes -- skipping VSL entirely for this description.")
-            no_vsl_grade["circuit_ir"] = None
-            no_vsl_grade["vsl_text"] = None
-            return no_vsl_grade
+            if no_vsl_grade["score"] >= 1.0:
+                print(f"  [{task_id}] [DEBUG] No-VSL attempt already passes -- skipping VSL entirely for this description.")
+                no_vsl_grade["circuit_ir"] = None
+                no_vsl_grade["vsl_text"] = None
+                return no_vsl_grade
 
-        print(f"  [{task_id}] [DEBUG] No-VSL attempt did not fully pass (score={no_vsl_grade['score']}) -- falling back to the VSL path.")
+            print(f"  [{task_id}] [DEBUG] No-VSL attempt did not fully pass (score={no_vsl_grade['score']}) -- falling back to the VSL path.")
+        else:
+            print(f"  [{task_id}] [DEBUG] force_vsl=True -- skipping the no-VSL shortcut, going straight to VSL.")
 
-        gir_result = await gir_agent.run(prompt_text)
+        gir_result = await run_agent_with_retry(gir_agent, prompt_text, task_id=task_id, label="gir_agent")
         vsl_text = gir_result.output.vsl_code
         print(f"  [{task_id}] [DEBUG] Raw VSL from model:\n{vsl_text}\n")
 
@@ -516,7 +637,7 @@ async def _evaluate_prompt_async(prompt_text, eval_problem, task_id, use_gir=Tru
     else:
         exec_input = prompt_text
 
-    execution_result = await execution_agent.run(exec_input)
+    execution_result = await run_agent_with_retry(execution_agent, exec_input, task_id=task_id, label="execution_agent (use_gir=False path)")
     code = strip_trailing_endmodule(execution_result.output.internal_logic) + "\n\nendmodule\n"
     print(f"  [{task_id}] [DEBUG] execution_agent (use_gir=False path) produced:\n{code}\n")
 
@@ -526,10 +647,10 @@ async def _evaluate_prompt_async(prompt_text, eval_problem, task_id, use_gir=Tru
     return result
 
 
-async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = max_rounds, pass_threshold: float = pass_threshold, task_id: str | None = None, eval_problem: dict | None = None, use_gir: bool = False):
+async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = max_rounds, pass_threshold: float = pass_threshold, task_id: str | None = None, eval_problem: dict | None = None, use_gir: bool = False, force_vsl: bool = False, checkpoint_path: "pathlib.Path | None" = None):
 
     if mode == "baseline":
-        execution_result = await execution_agent.run(prompt)
+        execution_result = await run_agent_with_retry(execution_agent, prompt, task_id=task_id, label="execution_agent (baseline mode)")
         final_code = strip_trailing_endmodule(execution_result.output.internal_logic) + "\n\nendmodule\n"
         grade = await _grade_code(final_code, eval_problem, task_id)
         return {
@@ -547,86 +668,132 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
         }
 
 
-    base_eval = await _evaluate_prompt_async(prompt, eval_problem, task_id, use_gir=use_gir)
-    print(f"  [{task_id}] [DEBUG] Base (raw prompt) execution_score: {base_eval['score']}")
-    print(f"  [{task_id}] [DEBUG] Base (raw prompt) execution_feedback (full): {base_eval['feedback']}")
-    if base_eval["score"] >= pass_threshold:
-        print(f"  [{task_id}] raw prompt already passes (score={base_eval['score']}), skipping enhancement")
-        return {
-            "original_prompt": prompt,
-            "original_intent": "n/a - raw prompt passed without enhancement",
-            "history": [{
-                "round": -1,
-                "prompt": prompt,
-                "text_quality_score": None,
-                "execution_score": base_eval["score"],
-                "reward": None,
-                "text_feedback": None,
-                "execution_feedback": base_eval["feedback"],
-                "change_made": "No enhancement needed",
-            }],
-            "final_prompt": prompt,
-            "final_execution_score": base_eval["score"],
-            "final_output": base_eval["code"],
-        }
+    checkpoint = _ck_load(checkpoint_path)
 
-    history = [{
-        "round": -1,
-        "prompt": prompt,
-        "code": base_eval["code"],
-        "circuit_ir": base_eval.get("circuit_ir"),
-        "vsl_text": base_eval.get("vsl_text"),
-        "text_quality_score": None,
-        "execution_score": base_eval["score"],
-        "reward": None,
-        "text_feedback": None,
-        "execution_feedback": base_eval["feedback"],
-        "change_made": "Raw prompt, no enhancement",
-    }]
-    reworded_result = await reworded_agent.run([
-        "Prompt to reword:", prompt,
-        f"Execution result of testing this EXACT raw prompt, unmodified "
-        f"(execution_score={base_eval['score']} out of 1.0 -- higher is "
-        f"better; a score close to 1.0 means the prompt is ALREADY very "
-        f"good and only needs a small, targeted fix, not a full rewrite):",
-        base_eval["feedback"],
-        "Code that was generated from this exact raw prompt:", base_eval["code"],
-        "If the execution_score above is high (e.g. above 0.7), make ONLY "
-        "the minimal change needed to address what the feedback identifies "
-        "as wrong (e.g. sync vs async reset, an off-by-one, a priority "
-        "order) -- copy everything else from the raw prompt VERBATIM. Do "
-        "not restructure the FSM, invent a different state encoding, or "
-        "otherwise rewrite parts of the prompt that had zero mismatches.",
-    ])
-    reworded_output = reworded_result.output
-    current_prompt = reworded_output.reworded_prompt
+    if checkpoint is not None and checkpoint.get("stage") in ("round0", "loop"):
+        print(f"  [{task_id}] [DEBUG] Resuming from checkpoint at {checkpoint_path} "
+              f"(stage={checkpoint['stage']}, round={checkpoint.get('round_num')}) "
+              f"-- skipping straight to the revision loop.")
+        base_eval = checkpoint["base_eval"]
+        history = checkpoint["history"]
+        current_prompt = checkpoint["current_prompt"]
+        exec_eval = checkpoint["exec_eval"]
+        round_num = checkpoint["round_num"]
+        score_output = SimpleNamespace(**checkpoint["score_output"])
+        original_intent = checkpoint.get("original_intent", "n/a - resumed from checkpoint, original intent not recorded")
 
-    score_result = await score_agent.run([
-        "Original prompt:", prompt,
-        "Revised version:", current_prompt,
-    ])
-    score_output = score_result.output
+    else:
+        # Checkpoint the expensive part (interface->VSL->render->real grading) so
+        # that if a LATER step (reworder/reviser/score agent) dies on a transient
+        # server error after all retries are exhausted, the next run of this
+        # task_id resumes from here instead of redoing the whole VSL evaluation
+        # from scratch.
+        if checkpoint is not None and checkpoint.get("stage") == "base_eval":
+            print(f"  [{task_id}] [DEBUG] Resuming from checkpoint at {checkpoint_path} "
+                  f"-- skipping re-evaluation of the base (raw) prompt.")
+            base_eval = checkpoint["base_eval"]
+        else:
+            base_eval = await _evaluate_prompt_async(prompt, eval_problem, task_id, use_gir=use_gir, force_vsl=force_vsl)
+            _ck_save(checkpoint_path, {"stage": "base_eval", "base_eval": _ck_strip(base_eval)})
+        print(f"  [{task_id}] [DEBUG] Base (raw prompt) execution_score: {base_eval['score']}")
+        print(f"  [{task_id}] [DEBUG] Base (raw prompt) execution_feedback (full): {base_eval['feedback']}")
+        if base_eval["score"] >= pass_threshold:
+            print(f"  [{task_id}] raw prompt already passes (score={base_eval['score']}), skipping enhancement")
+            return {
+                "original_prompt": prompt,
+                "original_intent": "n/a - raw prompt passed without enhancement",
+                "history": [{
+                    "round": -1,
+                    "prompt": prompt,
+                    "code": base_eval["code"],
+                    "circuit_ir": base_eval.get("circuit_ir"),
+                    "vsl_text": base_eval.get("vsl_text"),
+                    "text_quality_score": None,
+                    "execution_score": base_eval["score"],
+                    "reward": None,
+                    "text_feedback": None,
+                    "execution_feedback": base_eval["feedback"],
+                    "change_made": "No enhancement needed",
+                }],
+                "final_prompt": prompt,
+                "final_execution_score": base_eval["score"],
+                "final_output": base_eval["code"],
+            }
 
-    exec_eval = await _evaluate_prompt_async(current_prompt, eval_problem, task_id, use_gir=use_gir)
-    print(f"  [{task_id}] [DEBUG] Round 0 execution_score: {exec_eval['score']}")
-    print(f"  [{task_id}] [DEBUG] Round 0 execution_feedback (full): {exec_eval['feedback']}")
+        history = [{
+            "round": -1,
+            "prompt": prompt,
+            "code": base_eval["code"],
+            "circuit_ir": base_eval.get("circuit_ir"),
+            "vsl_text": base_eval.get("vsl_text"),
+            "text_quality_score": None,
+            "execution_score": base_eval["score"],
+            "reward": None,
+            "text_feedback": None,
+            "execution_feedback": base_eval["feedback"],
+            "change_made": "Raw prompt, no enhancement",
+        }]
+        reworded_result = await run_agent_with_retry(reworded_agent, [
+            "Prompt to reword:", prompt,
+            f"Execution result of testing this EXACT raw prompt, unmodified "
+            f"(execution_score={base_eval['score']} out of 1.0 -- higher is "
+            f"better; a score close to 1.0 means the prompt is ALREADY very "
+            f"good and only needs a small, targeted fix, not a full rewrite):",
+            base_eval["feedback"],
+            "Code that was generated from this exact raw prompt:", base_eval["code"],
+            "If the execution_score above is high (e.g. above 0.7), make ONLY "
+            "the minimal change needed to address what the feedback identifies "
+            "as wrong (e.g. sync vs async reset, an off-by-one, a priority "
+            "order) -- copy everything else from the raw prompt VERBATIM. Do "
+            "not restructure the FSM, invent a different state encoding, or "
+            "otherwise rewrite parts of the prompt that had zero mismatches.",
+        ], task_id=task_id, label="reworded_agent")
+        reworded_output = reworded_result.output
+        current_prompt = reworded_output.reworded_prompt
+        original_intent = reworded_output.original_intent
 
-    reward = compute_reward(base_eval["score"], exec_eval["score"], pass_threshold)
-    history.append({
-        "round": 0,
-        "prompt": current_prompt,
-        "code": exec_eval["code"],
-        "circuit_ir": exec_eval.get("circuit_ir"),
-        "vsl_text": exec_eval.get("vsl_text"),
-        "text_quality_score": score_output.score,
-        "execution_score": exec_eval["score"],
-        "reward": reward,
-        "text_feedback": score_output.feedback,
-        "execution_feedback": exec_eval["feedback"],
-        "change_made": "Initial reworded prompt",
-    })
+        score_result = await run_agent_with_retry(score_agent, [
+            "Original prompt:", prompt,
+            "Revised version:", current_prompt,
+        ], task_id=task_id, label="score_agent")
+        score_output = score_result.output
 
-    round_num = 0
+        exec_eval = await _evaluate_prompt_async(current_prompt, eval_problem, task_id, use_gir=use_gir, force_vsl=force_vsl)
+        print(f"  [{task_id}] [DEBUG] Round 0 execution_score: {exec_eval['score']}")
+        print(f"  [{task_id}] [DEBUG] Round 0 execution_feedback (full): {exec_eval['feedback']}")
+
+        reward = compute_reward(base_eval["score"], exec_eval["score"], pass_threshold)
+        history.append({
+            "round": 0,
+            "prompt": current_prompt,
+            "code": exec_eval["code"],
+            "circuit_ir": exec_eval.get("circuit_ir"),
+            "vsl_text": exec_eval.get("vsl_text"),
+            "text_quality_score": score_output.score,
+            "execution_score": exec_eval["score"],
+            "reward": reward,
+            "text_feedback": score_output.feedback,
+            "execution_feedback": exec_eval["feedback"],
+            "change_made": "Initial reworded prompt",
+        })
+
+        round_num = 0
+
+        _ck_save(checkpoint_path, {
+            "stage": "round0",
+            "base_eval": _ck_strip(base_eval),
+            "history": [_ck_strip(h) for h in history],
+            "current_prompt": current_prompt,
+            "exec_eval": _ck_strip(exec_eval),
+            "round_num": round_num,
+            "score_output": {
+                "score": score_output.score,
+                "missing_elements": score_output.missing_elements,
+                "ambiguities": score_output.ambiguities,
+                "feedback": score_output.feedback,
+            },
+            "original_intent": original_intent,
+        })
 
     while exec_eval["score"] < pass_threshold and round_num < max_rounds:
         round_num += 1
@@ -634,7 +801,7 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
         feedback_lower = exec_eval["feedback"].lower()
         if exec_eval["score"] == 0.0 and ("compil" in feedback_lower or "syntax" in feedback_lower):
             print(f"  [{task_id}] round {round_num}: compile error, regenerating from same prompt")
-            retry_eval = await _evaluate_prompt_async(current_prompt, eval_problem, task_id, use_gir=use_gir)
+            retry_eval = await _evaluate_prompt_async(current_prompt, eval_problem, task_id, use_gir=use_gir, force_vsl=force_vsl)
             history.append({
                 "round": round_num,
                 "prompt": current_prompt,
@@ -649,6 +816,21 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
                 "change_made": "Regenerated after compile error (prompt unchanged)",
             })
             exec_eval = retry_eval
+            _ck_save(checkpoint_path, {
+                "stage": "loop",
+                "base_eval": _ck_strip(base_eval),
+                "history": [_ck_strip(h) for h in history],
+                "current_prompt": current_prompt,
+                "exec_eval": _ck_strip(exec_eval),
+                "round_num": round_num,
+                "score_output": {
+                    "score": score_output.score,
+                    "missing_elements": score_output.missing_elements,
+                    "ambiguities": score_output.ambiguities,
+                    "feedback": score_output.feedback,
+                },
+                "original_intent": original_intent,
+            })
             continue
 
         history_summary = "\n\n".join([
@@ -732,17 +914,17 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
                     noop_note,
                 ]
 
-            revised_result = await reviser_agent.run(attempt_revise_input)
+            revised_result = await run_agent_with_retry(reviser_agent, attempt_revise_input, task_id=task_id, label="reviser_agent")
             new_prompt = revised_result.output.reworded_prompt
             print(f"  [{task_id}] Changes made in this round (attempt {noop_attempt}): {revised_result.output.change_made}")
 
-            new_score_result = await score_agent.run([
+            new_score_result = await run_agent_with_retry(score_agent, [
                 "Original prompt:", prompt,
                 "Revised version:", new_prompt,
-            ])
+            ], task_id=task_id, label="score_agent (revised)")
             new_score_output = new_score_result.output
 
-            new_exec_eval = await _evaluate_prompt_async(new_prompt, eval_problem, task_id, use_gir=use_gir)
+            new_exec_eval = await _evaluate_prompt_async(new_prompt, eval_problem, task_id, use_gir=use_gir, force_vsl=force_vsl)
             print(f"  [{task_id}] [DEBUG] Round {round_num} execution_score (attempt {noop_attempt}): {new_exec_eval['score']}")
             print(f"  [{task_id}] [DEBUG] Round {round_num} execution_feedback (full, attempt {noop_attempt}): {new_exec_eval['feedback']}")
 
@@ -778,10 +960,26 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
         score_output = new_score_output
         exec_eval = new_exec_eval
 
+        _ck_save(checkpoint_path, {
+            "stage": "loop",
+            "base_eval": _ck_strip(base_eval),
+            "history": [_ck_strip(h) for h in history],
+            "current_prompt": current_prompt,
+            "exec_eval": _ck_strip(exec_eval),
+            "round_num": round_num,
+            "score_output": {
+                "score": score_output.score,
+                "missing_elements": score_output.missing_elements,
+                "ambiguities": score_output.ambiguities,
+                "feedback": score_output.feedback,
+            },
+            "original_intent": original_intent,
+        })
+
     best = max(history, key=lambda h: h["execution_score"])
     return {
         "original_prompt": prompt,
-        "original_intent": reworded_output.original_intent,
+        "original_intent": original_intent,
         "history": history,
         "final_prompt": best["prompt"],
         "final_execution_score": best["execution_score"],
@@ -789,19 +987,21 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
     }
 
 
-
 #--CLI
 
 app = typer.Typer(help="Prompt enhancer with shaped-reward scoring across revision rounds.")
 
-async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir: bool = False, concurrency: int = 6):
+async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir: bool = False, force_vsl: bool = False, concurrency: int = (2 if os.environ.get("VSL_MODEL") == "gpt-oss" else 6), eval_file: pathlib.Path = pathlib.Path("outputs/VerilogEval_Machine_mutated_large.jsonl"), label: str | None = None):
     if not jsonl_file.exists():
         print(f"Error: File '{jsonl_file}' not found.")
         raise typer.Exit(code=1)
 
-    print(f"Reading tasks from {jsonl_file}... (mode={mode}, concurrency={concurrency})")
+    if label is None:
+        stem = jsonl_file.stem
+        label = "Human" if "Human" in stem else ("Machine" if "Machine" in stem else stem)
 
-    eval_file = pathlib.Path("verilog-eval/data/VerilogEval_Human.jsonl")
+    print(f"Reading tasks from {jsonl_file}... (mode={mode}, use_gir={use_gir}, force_vsl={force_vsl}, concurrency={concurrency}, eval_file={eval_file}, label={label})")
+
     eval_problems = {}
     if eval_file.exists():
         with open(eval_file, "r", encoding="utf-8") as f:
@@ -812,8 +1012,10 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
 
     output_dir = pathlib.Path("outputs")
     output_dir.mkdir(exist_ok=True)
-    output_file = output_dir / f"{mode}{'_vsl' if use_gir else ''}_samples_Human.jsonl"
-    history_file = output_dir / f"{mode}{'_vsl' if use_gir else ''}_history_Human.jsonl"
+    suffix = ("_vsl" if use_gir else "") + ("_forcevsl" if force_vsl else "")
+    output_file = output_dir / f"{mode}{suffix}_samples_{label}.jsonl"
+    history_file = output_dir / f"{mode}{suffix}_history_{label}.jsonl"
+    checkpoint_dir = output_dir / "checkpoints"
 
     tasks_data = []
     with open(jsonl_file, "r", encoding="utf-8") as f:
@@ -846,20 +1048,28 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
             print(f"\n Processing Task: {task_id} ")
             print(f"  [{task_id}] [DEBUG] Module interface given to gir_agent:\n{interface}\n")
 
+            checkpoint_path = checkpoint_dir / f"{label}_{task_id}.json"
             try:
                 result = await enhance_prompt(
                     prompt_text,
                     mode=mode,
                     task_id=task_id,
                     eval_problem=problem,
-                    use_gir=use_gir
+                    use_gir=use_gir,
+                    force_vsl=force_vsl,
+                    checkpoint_path=checkpoint_path,
                 )
             except Exception as e:
                 print(f"  ERROR on {task_id}: {type(e).__name__}: {e}")
-                print("  skipping this task")
+                print(f"  skipping this task (progress saved to {checkpoint_path} -- "
+                      f"rerunning this task_id will resume from there instead of "
+                      f"redoing the VSL evaluation from scratch)")
                 async with write_lock:
                     failed += 1
                 return
+            else:
+                # task fully succeeded -- checkpoint no longer needed
+                checkpoint_path.unlink(missing_ok=True)
 
         print(f"\n  [{task_id}] Final Execution Score: {result['final_execution_score']}")
         if result.get("history"):
@@ -909,8 +1119,33 @@ def main(
     jsonl_file: pathlib.Path = typer.Argument(...),
     mode: str = typer.Option("enhanced", help="'enhanced' or 'baseline'"),
     use_gir: bool = typer.Option(False, "--use-gir", help="Convert the prompt to VSL before generating"),
+    force_vsl: bool = typer.Option(
+        False, "--force-vsl",
+        help=("Only meaningful with --use-gir. Disables the no-VSL-first "
+              "shortcut so every task goes through the full VSL pipeline, "
+              "even ones the plain execution_agent would already pass. "
+              "Gives VSL's standalone pass rate across the whole dataset "
+              "instead of just its contribution on the hard subset -- "
+              "pair with a plain baseline run, which is the ablation."),
+    ),
+    eval_file: pathlib.Path = typer.Option(
+        pathlib.Path("outputs/VerilogEval_Machine_mutated_large.jsonl"),
+        "--eval-file",
+        help=("Eval JSONL (task_id/prompt/canonical_solution/test) matching "
+              "jsonl_file's task_ids -- provides the fixed interface and "
+              "testbench. Defaults to the mutated Machine set; pass the "
+              "original (non-mutated) eval file here to run against it "
+              "instead."),
+    ),
+    label: str = typer.Option(
+        None, "--label",
+        help=("Tag used in the output filenames (…_samples_<label>.jsonl). "
+              "Auto-detected from jsonl_file's name (Machine/Human) if not "
+              "set -- pass this explicitly for anything else, e.g. a retry "
+              "subset, so it doesn't silently overwrite a full run's output."),
+    ),
 ):
-    asyncio.run(process_file(jsonl_file, mode=mode, use_gir=use_gir))
+    asyncio.run(process_file(jsonl_file, mode=mode, use_gir=use_gir, force_vsl=force_vsl, eval_file=eval_file, label=label))
 
     """
     Reads prompts from a JSONL file, improves them with agents (using

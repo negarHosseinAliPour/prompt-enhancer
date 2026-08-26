@@ -7,6 +7,7 @@ free-text JSON fields. Includes the parser, validator, Verilog renderer,
 and the LLM agent that generates VSL from a natural-language prompt.
 """
 
+import os
 import pathlib
 import re
 from enum import Enum
@@ -16,8 +17,13 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google_cloud import GoogleCloudProvider
+from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 from google import genai
+import google.auth
+import google.auth.transport.requests
+
 
 _vertex_client = genai.Client(vertexai=True, location="global")
 
@@ -25,6 +31,27 @@ MODEL = GoogleModel(
     "gemini-3.1-pro-preview",
     provider=GoogleCloudProvider(client=_vertex_client),
 )
+
+_GCP_PROJECT_ID = "cs-poc-pjtbxc0qllmcraowi6w1wmi"
+_GCP_REGION = "us-central1"
+
+
+def _get_vertex_access_token():
+    creds, _ = google.auth.default()
+    creds.refresh(google.auth.transport.requests.Request())
+    return creds.token
+
+
+MODEL_GPT_OSS = OpenAIChatModel(
+    "openai/gpt-oss-120b-maas",
+    provider=OpenAIProvider(
+        base_url=f"https://{_GCP_REGION}-aiplatform.googleapis.com/v1/projects/{_GCP_PROJECT_ID}/locations/{_GCP_REGION}/endpoints/openapi",
+        api_key=_get_vertex_access_token(),
+    ),
+)
+
+if os.environ.get("VSL_MODEL") == "gpt-oss":
+    MODEL = MODEL_GPT_OSS
 
 # --- IR types -------------------------------------------------------------
 
@@ -325,18 +352,10 @@ def _normalize_concat_part(part: str) -> Optional[str]:
     if re.match(r"^\w+(\[[^\]]+\])?$", part):
         return part
 
-    # a replication can appear bare (5{a}) or wrapped in one or more extra
-    # brace pairs ({5{a}}, {{5{a}}}, ...) when nested inside a bigger
-    # concat's braces or when the model added redundant wrapping -- keep
-    # peeling off a single outer brace pair as long as what's left still
-    # looks like a wrapped single expression (not a comma list, which is
-    # handled separately below), so any amount of extra nesting collapses
-    # to the correct Verilog form instead of just one level.
+    
     while part.startswith("{") and part.endswith("}"):
         inner_stripped = part[1:-1].strip()
-        # if this brace group is just a plain concat (e.g. {a,b,c,d,e}),
-        # it might be the body of a replication like 5{{a,b,c,d,e}} -- so
-        # check each member instead of requiring the whole thing to be one
+        
         inner_group_parts = _split_top_level_commas(inner_stripped)
         if len(inner_group_parts) > 1:
             normalized = [_normalize_concat_part(p.strip()) for p in inner_group_parts]
@@ -956,12 +975,7 @@ def _needs_signal_registration(operand: OperandRef) -> bool:
 
 
 _FENCE_LINE_RE = re.compile(r"^(```|'''|~~~)[\w-]*$")
-# For a fence glued directly onto real content (no newline after it), only
-# strip the bare fence marker itself -- do NOT also eat a language tag here
-# (unlike _FENCE_LINE_RE's own-line case), since without a line boundary
-# there's no way to tell a language tag apart from the start of real VSL
-# (e.g. "```verilog\ncode" is a tag, but "'''STATES: A=0" is not -- "STATES"
-# here is real content, not a tag).
+
 _LEADING_FENCE_RE = re.compile(r"^(```|'''|~~~)")
 _TRAILING_FENCE_RE = re.compile(r"(```|'''|~~~)$")
 
@@ -997,46 +1011,145 @@ def _strip_fence_lines(text: str) -> str:
     return "\n".join(lines)
 
 
-_OUTPUT_REG_RE = re.compile(r"output\s+(?:reg|logic)\s*(?:\[[^\]]*\]\s*)?(\w+)")
-_OUTPUT_ANY_RE = re.compile(r"output\s+(?:reg\s+)?(?:logic\s+)?(?:\[[^\]]*\]\s*)?(\w+)")
-_PORT_DECL_RE = re.compile(
-    r"(?:input|output)\s+(?:reg\s+)?(?:logic\s+)?(?:\[\s*(\d+)\s*:\s*(\d+)\s*\]\s*)?(\w+)"
-)
+class PortInfo(BaseModel):
+    """One parsed port from the fixed module interface."""
+    name: str
+    direction: str          # "input" | "output" | "inout"
+    width: int = 1
+    is_reg_typed: bool = False
+
+
+
+_PORT_QUALIFIERS = {"wire", "reg", "logic", "var", "signed", "unsigned"}
+_REG_TYPED_QUALIFIERS = {"reg", "logic", "var"}
+_NOT_A_PORT_NAME = {"module", "endmodule", "parameter", "localparam", "input",
+                    "output", "inout"} | _PORT_QUALIFIERS
+
+_RANGE_RE = re.compile(r"^\[\s*(\d+)\s*:\s*(\d+)\s*\]")
+
+
+def _split_port_segments(text: str) -> list[tuple[str, bool]]:
+    """Splits an interface into (segment, resets_context) pairs, cutting at
+    ',', ';', '(' and ')' -- but only at bracket depth 0, so a range like
+    [WIDTH-1:0] stays intact. A ',' continues the previous declaration's
+    direction/width context (Verilog's 'input [3:0] a, b' shares them);
+    ';', '(' and ')' end it."""
+    segments: list[tuple[str, bool]] = []
+    depth = 0
+    current: list[str] = []
+    for ch in text:
+        if ch == "[":
+            depth += 1
+            current.append(ch)
+        elif ch == "]":
+            depth -= 1
+            current.append(ch)
+        elif depth == 0 and ch in ",;()":
+            segments.append(("".join(current), ch != ","))
+            current = []
+        else:
+            current.append(ch)
+    segments.append(("".join(current), True))
+    return segments
+
+
+def parse_module_ports(module_interface: str) -> dict[str, PortInfo]:
+    """Parses the fixed Verilog module interface into {port_name: PortInfo}.
+
+    Handles both ANSI style ('module m(input wire [7:0] a, b, output reg q);')
+    and the older non-ANSI style ('module m(a, q); input [7:0] a; output reg
+    q;'), shared declarations across commas, and every common type qualifier.
+    Ports whose range isn't a plain [int:int] (e.g. a parameterized
+    [WIDTH-1:0]) are recorded at width 1 rather than dropped, so at least
+    their direction and reg-ness are known."""
+    ports: dict[str, PortInfo] = {}
+    text = " ".join((module_interface or "").split())
+
+    current_direction: Optional[str] = None
+    current_width = 1
+    current_is_reg = False
+
+    for segment, resets_context in _split_port_segments(text):
+        rest = segment.strip()
+        if not rest:
+            if resets_context:
+                current_direction = None
+            continue
+
+        m = re.match(r"^(input|output|inout)\b\s*", rest)
+        if m:
+            current_direction = m.group(1)
+            current_width = 1
+            current_is_reg = False
+            rest = rest[m.end():].strip()
+        # otherwise this is either a continuation of the previous
+        # declaration ('input [3:0] a, b' -- direction/width carry over) or
+        # a bare name from a non-ANSI port list, which has no direction yet.
+
+        if current_direction is None:
+            continue
+
+        # optional type qualifiers
+        while True:
+            m = re.match(r"^(\w+)\b\s*", rest)
+            if m and m.group(1) in _PORT_QUALIFIERS:
+                if m.group(1) in _REG_TYPED_QUALIFIERS:
+                    current_is_reg = True
+                rest = rest[m.end():].strip()
+                continue
+            break
+
+        # optional [hi:lo] range
+        m = _RANGE_RE.match(rest)
+        if m:
+            current_width = abs(int(m.group(1)) - int(m.group(2))) + 1
+            rest = rest[m.end():].strip()
+        elif rest.startswith("["):
+            # non-literal range (e.g. [WIDTH-1:0]) -- skip it, keep width 1
+            close = rest.find("]")
+            if close != -1:
+                rest = rest[close + 1:].strip()
+
+        m = re.match(r"^(\w+)", rest)
+        if m and m.group(1) not in _NOT_A_PORT_NAME and not m.group(1).isdigit():
+            name = m.group(1)
+            ports[name] = PortInfo(
+                name=name,
+                direction=current_direction,
+                width=current_width,
+                is_reg_typed=current_is_reg,
+            )
+
+        if resets_context:
+            current_direction = None
+
+    return ports
 
 
 def _find_output_reg_names(module_interface: str) -> set[str]:
-    """Scans a raw Verilog module interface for 'output reg <name>' ports
-    -- these can't be driven with 'assign', only from inside an always
-    block, even for purely combinational logic."""
-    return set(_OUTPUT_REG_RE.findall(module_interface or ""))
+    """Every 'output reg/logic <name>' port -- these can't be driven with
+    'assign', only from inside an always block, even for purely
+    combinational logic."""
+    return {p.name for p in parse_module_ports(module_interface).values()
+            if p.direction == "output" and p.is_reg_typed}
 
 
 def _find_plain_output_names(module_interface: str) -> set[str]:
-    """Scans a raw Verilog module interface for every 'output <name>' port
-    (with or without 'reg'/'logic'), then returns just the ones that are
-    NOT reg-typed -- i.e. plain 'output [..] name' (implicit wire). A
-    CombBlock targeting one of these must render as a continuous 'assign',
-    not an 'always @(*)' block, since Verilog forbids procedural
-    assignment ('=') to a plain wire."""
-    all_outputs = set(_OUTPUT_ANY_RE.findall(module_interface or ""))
-    reg_outputs = _find_output_reg_names(module_interface)
-    return all_outputs - reg_outputs
+    """Every output port that is NOT reg-typed -- i.e. a plain (implicit or
+    explicit) wire. A CombBlock targeting one of these must render as a
+    continuous 'assign', not an 'always @(*)' block, since Verilog forbids
+    procedural assignment ('=') to a wire."""
+    return {p.name for p in parse_module_ports(module_interface).values()
+            if p.direction == "output" and not p.is_reg_typed}
 
 
 def _find_port_widths(module_interface: str) -> dict[str, int]:
-    """Scans a raw Verilog module interface for every input/output port
-    declaration and returns {port_name: width}. A port with no [hi:lo]
-    range is 1 bit wide. This lets us correctly size signals that are
-    only ever used as plain operands (e.g. inputs to a combinational
-    expression) and never declared via a VSL REG line, which would
-    otherwise default to width=1 regardless of their real interface width."""
-    widths: dict[str, int] = {}
-    for hi, lo, name in _PORT_DECL_RE.findall(module_interface or ""):
-        if hi and lo:
-            widths[name] = abs(int(hi) - int(lo)) + 1
-        else:
-            widths[name] = 1
-    return widths
+    """{port_name: width} for every port. A port with no [hi:lo] range is 1
+    bit wide. This lets us correctly size signals that are only ever used as
+    plain operands (e.g. inputs to a combinational expression) and never
+    declared via a VSL REG line, which would otherwise default to width=1
+    regardless of their real interface width."""
+    return {name: p.width for name, p in parse_module_ports(module_interface).items()}
 
 
 def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
@@ -1173,10 +1286,7 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
             continue
 
         if line.startswith("REG "):
-            # PORT and NEXT=<name> can show up in either order in the
-            # model's output ('... PORT NEXT=q_next' or '... NEXT=q_next
-            # PORT') -- if PORT lands in the middle, move it to the end,
-            # since the regex below only matches NEXT= followed by PORT
+
             m_port_mid = re.match(r"^(.*)\bPORT\b\s+(NEXT=\w+)\s*$", line)
             if m_port_mid:
                 line = f"{m_port_mid.group(1).rstrip()} {m_port_mid.group(2)} PORT"
@@ -1192,14 +1302,7 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
             if not m:
                 raise VSLParseError(f"Cannot parse REG line: '{line}'")
             (reg_name,width,clock,edge,rst_sig,rst_edge,rst_val_tok,init_val_tok,next_sig,port_flag,) = m.groups()
-            # If the VSL line has no explicit [width] AND this register is a
-            # module port (PORT set), use the port's real declared width
-            # from the interface instead of blindly defaulting to 1 -- the
-            # REG line is authoritative and normally OVERWRITES any width
-            # already inferred for this signal (e.g. from an earlier use as
-            # a plain operand, which correctly picked up the interface
-            # width), so defaulting to 1 here would silently truncate an
-            # otherwise-correctly-sized port down to 1 bit.
+
             if width:
                 width = int(width)
             elif port_flag and reg_name in port_widths:
@@ -1372,13 +1475,7 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
                 i += 1
                 continue
 
-            # A bit-indexed or bit-range target, e.g. 'next_state[3] = ...'
-            # or 'out[7:4] = ...' -- assigns just that slice of an
-            # existing (usually multi-bit) signal, exactly like Verilog's
-            # own bit-select LHS. 'target' in the Operation still holds the
-            # base signal name so the rest of the pipeline (signal
-            # registration, validation, needs_always_block) treats it
-            # uniformly with a whole-signal assignment.
+
             target_bit_index: Optional[int] = None
             target_bit_range: Optional[tuple[int, int]] = None
             base_name = target
@@ -1400,13 +1497,7 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
                 signals_seen[base_name].needs_always_block = True
             comb_extra_ops: list = []
             op = _parse_expression(base_name, expr_text, extra_ops=comb_extra_ops)
-            # If base_name isn't a real module port (no known interface
-            # width) and isn't itself bit-indexed/ranged, its width was
-            # just defaulted to 1 above -- now that the RHS expression is
-            # parsed, size it from the expression instead, exactly like
-            # the auxiliary-signal case below. Otherwise a brand-new
-            # internal signal like 'base = sel << 2' would silently stay
-            # 1 bit wide and truncate everything downstream.
+
             if (
                 target_bit_index is None
                 and target_bit_range is None
@@ -1513,14 +1604,7 @@ def validate_circuit(ir: CircuitIR) -> list[str]:
 
     next_signals_expected = {ru.next_signal for ru in ir.register_updates if ru.next_signal}
     comb_targets_declared = {cb.target_signal for cb in ir.comb_blocks}
-    # A NEXT= signal can also be driven by:
-    #  - a plain whole-signal assignment (e.g. 'next_q = d'), or
-    #  - a per-bit/per-range assignment (e.g. 'q_next[4] = ...', 'q_next[3] = ...')
-    # outside any COMB block -- both show up as combinational_ops (the
-    # whole-signal case has target set and no bit_index/bit_range; the
-    # per-bit case has target_bit_index or target_bit_range set). Either
-    # form satisfies NEXT= just as well as a COMB block and shouldn't be
-    # flagged as missing.
+
     comb_targets_declared |= {
         op.target for op in ir.combinational_ops if op.target
     }
@@ -1720,14 +1804,7 @@ def render_verilog(ir: CircuitIR) -> str:
     signals_by_id = {s.id: s for s in ir.signals}
     next_signals = {ru.next_signal for ru in ir.register_updates if ru.next_signal}
 
-    # Any register that's a declared output port gets an internal shadow
-    # register (name + '_r') that actually receives the <= assignments,
-    # plus a final 'assign port = port_r;' -- but only when the fixed
-    # interface declares the port as plain 'output' (implicit wire), since
-    # that's the case where writing to the port directly with <= would be
-    # illegal. If the interface instead declares it 'output reg' (verified
-    # via port_is_reg_typed), a continuous assign onto it is what's
-    # illegal, so we drive that port name directly instead.
+
     port_reg_names = {ru.target_register for ru in ir.register_updates
                       if signals_by_id.get(ru.target_register) and signals_by_id[ru.target_register].is_port_declared
                       and not signals_by_id[ru.target_register].port_is_reg_typed}
@@ -1736,10 +1813,7 @@ def render_verilog(ir: CircuitIR) -> str:
     def _render_name(name: str) -> str:
         return internal_name_for.get(name, name)
 
-    # Any signal driven by a combinational_op or comb_block, that isn't a
-    # register and isn't already declared as a port, needs an explicit
-    # wire declaration -- otherwise it's an implicit net, which some
-    # toolchains (default_nettype none) reject at compile time.
+
     combinationally_driven = set()
     for op in ir.combinational_ops:
         if op.target_concat:
@@ -1749,17 +1823,7 @@ def render_verilog(ir: CircuitIR) -> str:
     for cb in ir.comb_blocks:
         combinationally_driven.add(cb.target_signal)
 
-    # Any signal driven combinationally that ISN'T already declared via the
-    # fixed module interface needs an explicit wire declaration here --
-    # otherwise it's an implicit net, which some toolchains (or a strict
-    # iverilog config, even without an explicit default_nettype none)
-    # reject at compile time. This includes both synthetic auxiliary
-    # signals the parser created internally (always prefixed __aux_) AND
-    # any ordinary-looking intermediate signal the model introduced (e.g.
-    # 'w1 = a & b' with no corresponding port) -- the earlier version of
-    # this code only declared __aux_ signals, wrongly assuming any
-    # non-__aux_ name must already be a module port, which silently
-    # produced undeclared-net compile errors for exactly this pattern.
+    
     wires_to_declare = {
         s for s in combinationally_driven
         if not (signals_by_id.get(s) and signals_by_id[s].is_module_port)
@@ -1776,16 +1840,7 @@ def render_verilog(ir: CircuitIR) -> str:
         width_decl = f"[{sig_def.width - 1}:0] " if sig_def.width > 1 else ""
         lines.append(f"reg {width_decl}{internal_name_for[port_name]};")
     for next_sig in sorted(next_signals):
-        # A 'next' signal must be typed to match how it's actually driven:
-        # if a COMB block drives it, or if the plain assignment driving it
-        # was itself flagged needs_always_block (e.g. because REG ... NEXT=
-        # appeared before the plain 'next_state = expr' assignment in the
-        # VSL, so it needed an always @(*) block rather than a continuous
-        # assign), it needs to be a reg (matching the canonical
-        # 'reg [N:0] state, next;' FSM style). If instead it's driven by a
-        # plain combinational assignment that rendered as a continuous
-        # 'assign' (no always block), it must be a wire instead, since
-        # 'assign' onto a reg is illegal.
+        
         driven_by_comb_block = any(cb.target_signal == next_sig for cb in ir.comb_blocks)
         next_sig_def = signals_by_id.get(next_sig)
         driven_by_always = bool(next_sig_def and next_sig_def.needs_always_block)
@@ -2034,12 +2089,16 @@ class VSLOutput(BaseModel):
     vsl_code: str = Field(..., description="Circuit logic written in VSL, following the grammar in the system prompt.")
 
 
-# The VSL grammar is the output of the discovery loop (discover_grammar.py),
-# not something hand-written here -- it lives in a separate text file
-# (grammar.txt, next to this one) so that re-running discovery and dropping
-# in a new discovered_grammar_*.txt as grammar.txt is enough to update it,
-# with no need to touch this Python file at all.
-_GRAMMAR_FILE = pathlib.Path(__file__).parent / "grammar.txt"
+
+_grammar_override = os.environ.get("VSL_GRAMMAR_FILE")
+if _grammar_override:
+    _GRAMMAR_FILE = pathlib.Path(_grammar_override)
+else:
+    _vsl_model_name = os.environ.get("VSL_MODEL")
+    if _vsl_model_name and _vsl_model_name != "gemini":
+        _GRAMMAR_FILE = pathlib.Path(__file__).parent / f"grammar_{_vsl_model_name}.txt"
+    else:
+        _GRAMMAR_FILE = pathlib.Path(__file__).parent / "grammar.txt"
 try:
     VSL_GRAMMAR_AND_EXAMPLES = _GRAMMAR_FILE.read_text(encoding="utf-8")
 except FileNotFoundError:
@@ -2050,10 +2109,16 @@ except FileNotFoundError:
     )
 
 
+if os.environ.get("VSL_MODEL") == "gpt-oss":
+    from pydantic_ai import NativeOutput
+    _gir_output_type = NativeOutput(VSLOutput)
+else:
+    _gir_output_type = VSLOutput
+
 gir_agent = Agent(
     MODEL,
     name="GIR Agent",
-    output_type=VSLOutput,
-    model_settings={"temperature": 0},
+    output_type=_gir_output_type,
+    model_settings={"temperature": 0, "max_tokens": 8192},
     system_prompt=VSL_GRAMMAR_AND_EXAMPLES,
 )
