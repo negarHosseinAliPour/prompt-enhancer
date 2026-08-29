@@ -1,0 +1,144 @@
+```
+# Verilog Specification Language (VSL) – compact grammar
+# ---------------------------------------------------
+# 1. Overall structure
+VSL            ::=  {Statement}+ EOF
+Statement       ::=  StateDecl
+                  |   RegDecl
+                  |   CombBlock
+                  |   Assignment
+                  |   Comment
+
+# 2. Comments – whole line starting with '#'
+Comment         ::=  '#'  .*  NEWLINE
+
+# 3. State declaration (named enumerated states)
+StateDecl       ::=  'STATES:' WS StateList NEWLINE
+StateList       ::=  StateItem (',' WS StateItem)*
+StateItem       ::=  Identifier '=' IntLiteral
+
+# 4. Register declaration (sequential element)
+#    Syntax: REG <name> [<width>] @<clk>.<edge> <reset> -> <init> NEXT=<next> [PORT]
+RegDecl         ::=  'REG' WS Identifier RegWidth? WS '@' Clock EdgeSpec WS ResetSpec? WS 'NEXT=' Identifier (WS 'PORT')? NEWLINE
+RegWidth        ::=  '[' IntLiteral ']'                # number of bits, e.g. [32]
+Clock           ::=  Identifier                         # clock signal name
+EdgeSpec        ::=  '.' ('pos' | 'neg')                # .pos for posedge, .neg for negedge
+# Reset specification – optional.  If the mode (sync/async) is omitted the default is
+# synchronous.  The polarity (pos/neg) defaults to "pos" if omitted.
+ResetSpec       ::=  Identifier '.' ResetMode? ResetPolarity? '->' Value
+ResetMode       ::=  'sync' | 'async'
+ResetPolarity   ::=  'pos' | 'neg'
+
+# 5. Combinational block – a set of guarded assignments that produce a single
+#    signal (the left‑hand identifier after the keyword COMB).
+CombBlock       ::=  'COMB' WS Identifier NEWLINE RuleList
+RuleList        ::=  INDENT Rule (NEWLINE INDENT '|' WS? Rule)* NEWLINE
+Rule            ::=  Condition WS '->' WS Expr
+Condition       ::=  (CondTerm (WS '&' WS CondTerm)*) | '*'
+CondTerm        ::=  SimpleCond | '(' WS Condition WS ')'
+SimpleCond      ::=  Identifier BitSelect? EqualityOp Value
+EqualityOp      ::=  '=' | '!='
+BitSelect       ::=  '[' IntLiteral ']' | '[' IntLiteral ':' IntLiteral ']'
+
+# 6. Simple assignment (outside a COMB block)
+Assignment      ::=  Identifier WS '=' WS Expr NEWLINE
+
+# 7. Expressions – used on the right‑hand side of a rule or an assignment
+Expr            ::=  TernaryExpr
+TernaryExpr     ::=  OrExpr ('?' WS Expr ':' WS Expr)?
+OrExpr          ::=  AndExpr (WS '|' WS AndExpr)*
+AndExpr         ::=  XorExpr (WS '&' WS XorExpr)*
+XorExpr         ::=  ShiftExpr (WS '^' WS ShiftExpr)*
+ShiftExpr       ::=  AddSubExpr ( ( '>>' | '<<' ) WS IntLiteral )?
+AddSubExpr      ::=  MulDivExpr ( ( '+' | '-' ) WS MulDivExpr )*
+MulDivExpr      ::=  UnaryExpr ( ( '*' | '/' ) WS UnaryExpr )*
+UnaryExpr       ::=  ('~' | '!') WS UnaryExpr | Primary
+Primary         ::=  Identifier BitSelect?
+                  |  Number
+                  |  ConcatExpr
+                  |  ReplicateExpr
+                  |  '(' WS Expr WS ')'
+
+# 8. Concatenation and replication
+ConcatExpr      ::=  '{' WS ConcatItem (',' WS ConcatItem)* WS '}'
+ConcatItem      ::=  Expr | ReplicateExpr
+ReplicateExpr   ::=  '{' WS IntLiteral WS '}' WS '{' WS Expr WS '}'
+
+# 9. Literals
+Number          ::=  IntLiteral | HexLiteral | BinLiteral | BitPattern
+IntLiteral      ::=  [0-9]+                                   # decimal, e.g. 5
+HexLiteral      ::=  [0-9]+ "'h" HexDigits                    # 4'hF, 32'h0000_0001
+BinLiteral      ::=  [0-9]+ "'b" BinDigits                    # 8'b1010_1100
+BitPattern      ::=  [0-9]+ "'d" [0-9]+                      # decimal with size, optional
+HexDigits       ::=  [0-9a-fA-F_]+
+BinDigits       ::=  [01_]+
+
+# 10. Identifier
+Identifier      ::=  [a-zA-Z_][a-zA-Z0-9_]*
+
+# 11. Whitespace helpers (used only in the formal grammar – the actual parser will ignore ordinary spaces and new‑lines)
+WS              ::=  [ \t]+
+NEWLINE         ::=  '\r'? '\n'
+INDENT          ::=  ( ' ' | '\t' )+   # at least one indentation character
+
+# ---------------------------------------------------------------------------
+# Semantic notes (not part of the BNF but vital for the downstream translator)
+# ---------------------------------------------------------------------------
+# * Every REG declaration creates a sequential element.  The optional "PORT"
+#   keyword marks the register as an output port (i.e. it will be rendered as
+#   "output reg").
+# * The expression after "NEXT=" must be defined by a COMB block that shares
+#   the same identifier name (the "next" signal).  The translator will treat the
+#   COMB block as pure combinational logic that drives the next‑state/value.
+# * In a COMB block the left‑hand side of a rule is a guard (a conjunction of
+#   equality/inequality tests).  The special guard "*" is the default rule and
+#   matches when no earlier rule fires.
+# * Bit‑selects and part‑selects are written exactly as in Verilog – e.g.
+#   "sig[3]", "sig[7:0]".  They are parsed as part of the primary identifier.
+# * Replication – "{N{expr}}" – expands to N copies of the sub‑expression and
+#   can be nested inside concatenations.  The translator must emit the Verilog
+#   replication syntax unchanged.
+# * The ternary operator "cond ? a : b" may appear anywhere an expression is
+#   expected and follows the usual Verilog precedence.
+# * All literals preserve the width information supplied in the source (e.g.
+#   "4'hF", "32'h0000_0001").  If a plain integer is used, the translator will
+#   size‑extend it to the width of the surrounding expression.
+# * The "*" guard must appear at most once per COMB block and should be placed
+#   after all explicit guards – it becomes the default case.
+#
+# ---------------------------------------------------------------------------
+# Example VSL that conforms to this grammar (excerpt from the prompt):
+# ---------------------------------------------------------------------------
+# STATES: A=0, B=1, C=2, D=3
+# REG state[2] @clk.pos reset.sync->A NEXT=next_state
+# COMB next_state
+#   state=A & in=1 -> B
+# | state=A & in=0 -> A
+# | state=B & in=1 -> B
+# | state=B & in=0 -> C
+# | state=C & in=1 -> D
+# | state=C & in=0 -> A
+# | state=D & in=1 -> B
+# | state=D & in=0 -> C
+# | * -> A
+# out = state=D ? 1 : 0
+# ---------------------------------------------------------------------------
+```
+
+The above grammar captures all recurring patterns observed in the provided
+reference VSL snippets:
+* **Shift vs. rotate** – expressed with concatenation (e.g. `{q[0], q[31:1]}`) and
+  bitwise XOR in a COMB rule.
+* **Synchronous vs. asynchronous reset** – the `reset` token may be followed by
+  `.sync`/`.async` and optionally `.pos`/`.neg` to indicate polarity.
+* **Priority / default handling** – the `* -> …` rule gives an explicit default.
+* **State encoding** – the `STATES:` line enumerates symbolic names with numeric
+  values that the translator will map to Verilog `localparam`s.
+* **Output expressions** – simple assignments (`out = a ^ b`) or ternary
+  expressions (`out = state=D ? 1 : 0`).
+* **Replication and concatenation** – `{N{expr}}` and `{expr1,expr2,…}` are
+  first‑class expression forms.
+
+Any new description can be mapped to this grammar, guaranteeing an
+unambiguous intermediate representation that the fixed Python backend can turn
+into synthesizable Verilog.
