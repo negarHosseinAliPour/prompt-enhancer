@@ -37,10 +37,20 @@ class GrammarProposal(BaseModel):
     grammar_text: str = Field(
         ...,
         description=(
-            "The full VSL grammar and worked examples, written as a system "
-            "prompt for a model that will translate English descriptions "
-            "into VSL. Must be self-contained: a model given ONLY this text "
-            "plus a description should be able to produce correct VSL."
+            "The full VSL grammar AND at least 6 complete worked examples, "
+            "written as a system prompt for a model that will translate "
+            "English descriptions into VSL. This is NOT a formal EBNF/BNF "
+            "syntax reference -- a bare list of production rules is "
+            "unacceptable even if syntactically complete, because it gives "
+            "a translating model no concrete pattern to imitate. Every "
+            "worked example MUST be a full, real (Description: ...\n\n"
+            "VSL: ...) pair copied or closely adapted from the reference "
+            "examples you were shown, covering the different construct "
+            "types (at least one register, one combinational block, one "
+            "FSM with STATES, one plain assignment). Must be self-contained: "
+            "a model given ONLY this text plus a new description should be "
+            "able to produce correct VSL by pattern-matching against the "
+            "worked examples, not by parsing formal grammar notation."
         ),
     )
     reasoning: str = Field(
@@ -84,8 +94,22 @@ discovery_agent = Agent(
         "On later rounds you'll also see how your previous grammar performed "
         "on a fresh sample: what passed, what failed, and why. Fix the "
         "specific gaps rather than rewriting from scratch.\n\n"
-        "Output a complete, self-contained grammar: another model given only "
-        "your grammar_text plus a new description must produce correct VSL."
+        "CRITICAL: your grammar_text is consumed by ANOTHER language model "
+        "that must translate a brand-new English description into VSL after "
+        "reading ONLY your grammar_text. A model does this far more "
+        "reliably by pattern-matching against several complete worked "
+        "examples than by parsing abstract EBNF/BNF production rules. "
+        "Therefore grammar_text must NOT be a formal grammar reference "
+        "(no bare '::=' production-rule listings, no token tables). Instead "
+        "it must read like a short how-to guide: a brief explanation of "
+        "each construct followed immediately by at least 6 full worked "
+        "examples in the exact form 'Description: <text>\n\nVSL: <text>', "
+        "drawn from or closely modeled on the reference examples you were "
+        "shown, covering a register, a combinational block, an FSM with "
+        "STATES, and a plain assignment at minimum.\n\n"
+        "Output a complete, self-contained grammar with those worked "
+        "examples embedded: another model given only your grammar_text plus "
+        "a new description must produce correct VSL."
     ),
 )
 
@@ -319,6 +343,14 @@ async def run_discovery(
 
     rng = random.Random(seed)
 
+    # Truncate any rounds file left over from a previous run against this
+    # same --output path -- previously this file was opened with mode "a"
+    # for every round, so re-running with the same --output silently
+    # appended a fresh run's rounds after a stale prior run's, making the
+    # file's round numbers ambiguous (two different "round 1"s, etc.).
+    rounds_path = output_path.with_suffix(".rounds.jsonl")
+    rounds_path.write_text("", encoding="utf-8")
+
     reference_set = rng.sample(examples, min(40, len(examples)))
 
     grammar_text = None
@@ -348,13 +380,38 @@ async def run_discovery(
         for _attempt in range(1, 8):
             try:
                 proposal_result = await discovery_agent.run(prompt_parts)
-                break
             except Exception as e:
                 if _attempt == 7:
                     raise
                 wait_s = min(5 * _attempt, 30)
                 print(f"[RETRY] discovery_agent.run failed (attempt {_attempt}/7): {e}. Retrying in {wait_s}s...")
                 await asyncio.sleep(wait_s)
+                continue
+
+            candidate_text = proposal_result.output.grammar_text or ""
+            # A real grammar-with-examples answer is necessarily long (the
+            # worked examples alone run to a few thousand characters). An
+            # empty/near-empty grammar_text (seen in practice with gpt-oss's
+            # reasoning mode occasionally returning a bare "analysis" stub
+            # instead of the structured field) or one with no worked
+            # examples at all would silently poison this round's test --
+            # every candidate VSL generation would fail against it. Treat
+            # that the same as a call failure and retry instead of
+            # proceeding with a broken grammar.
+            if len(candidate_text) < 400 or "Description:" not in candidate_text or "VSL:" not in candidate_text:
+                if _attempt == 7:
+                    print(f"[WARNING] round {round_num}: discovery_agent kept returning a "
+                          f"too-short or example-free grammar_text after 7 attempts "
+                          f"({len(candidate_text)} chars); proceeding with it anyway.")
+                    break
+                wait_s = min(5 * _attempt, 30)
+                print(f"[RETRY] discovery_agent returned a too-short or example-free "
+                      f"grammar_text (attempt {_attempt}/7, {len(candidate_text)} chars). "
+                      f"Retrying in {wait_s}s...")
+                await asyncio.sleep(wait_s)
+                continue
+
+            break
         grammar_text = proposal_result.output.grammar_text
         reasoning = proposal_result.output.reasoning
         print(f"Discovery agent reasoning: {reasoning[:300]}")
@@ -375,7 +432,7 @@ async def run_discovery(
             "reasoning": reasoning,
             "grammar_text": grammar_text,
         }
-        with open(output_path.with_suffix(".rounds.jsonl"), "a", encoding="utf-8") as f:
+        with open(rounds_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(round_record) + "\n")
 
 

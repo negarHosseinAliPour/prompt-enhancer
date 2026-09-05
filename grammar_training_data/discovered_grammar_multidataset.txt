@@ -1,0 +1,191 @@
+# VSL (Verilog Specification Language) – Quick‑Start Guide
+
+## 1️⃣  General style rules
+- **One line = one VSL statement**. Blank lines are allowed between separate blocks.
+- All identifiers must match the ports that appear in the *fixed* module header – never invent a new top‑level name.
+- Every `COMB` block with more than one guarded assignment must end with a default branch written `| * -> <expr>`.
+- Guards (the left side of `->`) can only use equality tests (`sig=0`, `sig=1`, `state=S1` …) optionally chained with `&` for logical AND.  A plain signal name is illegal – write `sel=1`.
+- Guards never contain arithmetic or comparison operators.  Anything that looks like a calculation belongs on the **right‑hand side** of the arrow.
+- Widths are always literal numbers (`[4]`, `[8]`).  Parameterised widths (`[WIDTH]`) are not supported.
+- Only the operators listed in Section 5 are legal; any other token will cause a parse error.
+- No structural primitives (`and`, `or`, `not`, `xor`, module/endmodule, C‑style comments).  Express the same functionality with a single expression.
+
+## 2️⃣  Register (sequential) blocks
+```
+REG <name>[<width>] @<clk>.pos|neg <reset_clause> [PORT] [NEXT=<next_sig>]
+  <guarded‑assignment>
+| <guarded‑assignment>
+| * -> <default‑expr>
+```
+- `<name>` – register identifier (also the output port name when `PORT` is present).
+- `<width>` – literal integer (omit the brackets for a scalar).
+- `@<clk>.pos` – rising edge, `@<clk>.neg` – falling edge.
+- `<reset_clause>` – exactly one of:
+  * `reset_name.pos-><value>` asynchronous reset (sampled outside the clock edge)
+  * `reset_name.sync-><value>` synchronous reset (evaluated inside the clocked block)
+- `PORT` – optional flag meaning the register drives an output port of the same name.
+- `NEXT=<next_sig>` – used for FSMs; the register loads the signal `<next_sig>` instead of the expression on the right‑hand side.
+- Guarded assignment syntax:
+  * `<condition> -> <expr>` – `<condition>` is a series of `sig=val` tests joined by `&`.
+  * `*` may be used as the condition for the *default* (wild‑card) branch.
+- Priority – guards are evaluated top‑to‑bottom; the first true guard wins (exactly like `if … else if … else`).
+
+## 3️⃣  Combinational blocks (or plain wire assignments)
+Two forms are allowed:
+### 3a – One‑line unconditional wire
+```
+out = a & b           # no COMB keyword needed
+```
+### 3b – Guarded combinational block
+```
+COMB <output>
+  <condition> -> <expr>
+| <condition> -> <expr>
+| * -> <default‑expr>
+```
+- `<output>` may be a scalar or a vector.
+- The same guard rules from the Register section apply.
+- If there is **only one** rule you may write it on a single line without the leading `|`:
+  `COMB out  sel=1 -> a | * -> b`
+
+## 4️⃣  Finite‑State‑Machine (Moore or Mealy)
+1. **State enumeration** – a single line that starts with `STATES:`
+```
+STATES: S0=0, S1=1, S2=2, …
+```
+2. **State register** – a normal `REG` line, usually with a `NEXT=` reference.
+```
+REG state @clk.pos reset.sync->S0 NEXT=next_state
+```
+3. **Next‑state combinational logic** – a `COMB` block whose output signal is the name after `NEXT=`.
+4. **Output logic** – another `COMB` block (or a plain assignment) that maps states (and possibly inputs) to the module’s outputs.
+5. **Mealy output** – the guard may mention inputs as well as the current state.
+
+## 5️⃣  Expressions (right‑hand side only)
+| Category | Syntax examples |
+|----------|-----------------|
+| Literals | `0`, `1'b1`, `4'b1010`, `8'hFF` |
+| Bit‑selection | `vec[3]`, `vec[7:0]` |
+| Concatenation | `{a,b,c}` (order is left‑to‑right) |
+| Shifts (logical) | `a >> 1`, `a << 2` |
+| Arithmetic | `a + 1`, `a - b`, `cnt + 1` |
+| Logical / bitwise | `a & b`, `a | b`, `a ^ b`, `~a` |
+| Ternary (single line only) | `out = cond ? expr1 : expr2` |
+
+> **Never** place any of these operators inside a guard.  Write `state=S1 & flag=1` – never `state=S1 & cnt>3`.
+
+## 6️⃣  Priority & ambiguity handling (the things the model must *explicitly* write)
+| Ambiguity in English | How to express it in VSL |
+|----------------------|--------------------------|
+| **Shift vs. rotate** – English may say *rotate left* | VSL knows only logical shifts.  Write a rotate as a concatenation, e.g. `rotate‑left‑1: {a[2:0], a[3]}` |
+| **Synchronous vs. asynchronous reset** | Use `.pos` in the *reset clause* for async; add `.sync` after the arrow for sync (`reset.sync->0`). |
+| **Condition priority** – multiple `if‑else` cases | Order the guards from most specific to most general, separate with `|`, and always finish with `| * -> …`. |
+| **Equality vs. comparison** | Equality uses `=` inside a guard; any “greater‑than”, “less‑than”, etc. belongs on the RHS of an assignment. |
+
+## 7️⃣  Worked examples (minimum six, covering every construct)
+### Example 1 – Register with **asynchronous** reset, priority **load → shift → hold**
+**Description:** 4‑bit shift register, clock `clk`, active‑high asynchronous reset `areset`.  When `load` is high the vector `data` is loaded (load has priority over `ena`).  When `ena` is high and `load` is low the register shifts **right** logically, inserting a zero at the MSB.  Otherwise it holds its value.  The register drives the output port `q`.
+**VSL:**
+```
+REG q[4] @clk.pos areset.pos->4'b0000 PORT
+  load=1 -> data
+| ena=1  -> q >> 1
+| *      -> q
+```
+---
+### Example 2 – Pure wiring (vector copy + bit‑select outputs)
+**Description:** Copy a 3‑bit input `vec` to output `outv` and also drive three scalar outputs with the individual bits.
+**VSL:**
+```
+outv = vec
+o2   = vec[2]
+o1   = vec[1]
+o0   = vec[0]
+```
+---
+### Example 3 – Edge detector using two registers
+**Description:** Store the previous value of an 8‑bit bus `in` in a hidden register `d_last`.  On every positive edge of `clk` output `anyedge = in ^ d_last`.  Both registers update on the same clock edge.
+**VSL:**
+```
+REG d_last[8] @clk.pos
+  * -> in
+
+REG anyedge[8] @clk.pos PORT
+  * -> in ^ d_last
+```
+---
+### Example 4 – 2‑bit comparator written with primitive‑style expressions
+**Description:** Produce `EQ[1:0]` (bit‑wise equality) and `GT[1:0]` (greater‑than) for two 2‑bit numbers `A` and `B` using only `and`, `or`, `not`, `xor`‑style expressions.
+**VSL:**
+```
+EQ[1] = ~ ( A[1] ^ B[1] )
+EQ[0] = ~ ( A[0] ^ B[0] )
+GT[1] = A[1] & ~ B[1]
+GT[0] = A[0] & ~ B[0]
+```
+---
+### Example 5 – Moore FSM with **synchronous** reset and a derived enable output
+**Description:** A three‑bit state machine cycles `B0 → B1 → B2 → B3 → Done`.  A synchronous active‑high `reset` forces state `B0`.  Output `shift_ena` is 1 in any of the first four states, otherwise 0.
+**VSL:**
+```
+STATES: B0=0, B1=1, B2=2, B3=3, Done=4
+
+REG state[3] @clk.pos reset.sync->B0 NEXT=next_state
+
+COMB next_state
+  state=B0 -> B1
+| state=B1 -> B2
+| state=B2 -> B3
+| state=B3 -> Done
+| *       -> Done
+
+COMB shift_ena
+  state=B0 -> 1
+| state=B1 -> 1
+| state=B2 -> 1
+| state=B3 -> 1
+| *       -> 0
+```
+---
+### Example 6 – 2‑to‑1 **8‑bit** multiplexer (the pattern that previously broke)
+**Description:** Select between two 8‑bit data inputs `a` and `b` using a 1‑bit selector `sel`.  When `sel` is **1** the output is `a`; otherwise it is `b`.
+**VSL:**
+```
+COMB out
+  sel=1 -> a
+| *    -> b
+```
+---
+## 8️⃣  Quick‑reference cheat‑sheet
+| Token | Meaning |
+|-------|---------|
+| `REG` | Clocked register declaration |
+| `COMB`| Guarded combinational block (or plain assignment) |
+| `STATES:` | List of named state encodings |
+| `@clk.pos` / `@clk.neg` | Clock edge selector |
+| `reset.pos` / `reset.neg` | Asynchronous reset edge |
+| `reset.sync` | Synchronous reset inside the clocked block |
+| `PORT` | Register drives an output port of the same name |
+| `NEXT=` | Name of the next‑state signal for FSMs |
+| `|` | Separate alternative guarded assignments (priority) |
+| `*` | Wild‑card guard – default branch |
+| `=` (inside guard) | Equality test (`sig=0`, `state=S1`) |
+| `&` (inside guard) | Logical AND of equality tests |
+| `->` | Arrow separating guard from RHS expression |
+| `? :` | Ternary operator – **only** for a single‑line unconditional assignment |
+
+## 9️⃣  How to write VSL for a brand‑new description
+1. Read the English description and list all storage elements (registers, FSM state registers, counters).  Each becomes a `REG` line.
+2. Identify the reset type – look for *asynchronous* or *synchronous* and write the proper reset clause.
+3. Decide the priority order of conditional behaviour.  Write the most specific guard first; finish the block with `| * -> <fallback>`.
+4. If the design is an FSM:
+   * Write a `STATES:` line with every named state.
+   * Write `REG state … NEXT=next_state` (include reset as required).
+   * Write a `COMB next_state` block for the transition table.
+   * Write one (or more) `COMB` blocks for the output logic.
+5. All remaining pure combinational wiring can be expressed as a one‑line assignment or a `COMB` block with guards.
+6. Double‑check that every `COMB` block containing more than one guard ends with a `*` branch, and that every guard uses only equality tests combined with `&`.
+7. Emit the VSL exactly as shown – no extra punctuation, no comments.
+
+---
+*End of VSL Quick‑Start Guide.*
