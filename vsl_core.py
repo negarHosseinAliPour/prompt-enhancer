@@ -1275,13 +1275,19 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
 
         if line.startswith("STATES:"):
             body = line[len("STATES:"):].strip()
-            for pair in body.split(","):
-                name, val = pair.split("=")
-                val = val.strip()
-                try:
-                    _STATE_ENCODING[name.strip()] = _verilog_literal_to_int(val)
-                except ValueError:
-                    _STATE_ENCODING[name.strip()] = int(val)
+            if body:
+                for pair in body.split(","):
+                    pair = pair.strip()
+                    if not pair:
+                        continue
+                    if "=" not in pair:
+                        raise VSLParseError(f"Cannot parse STATES entry '{pair}' (expected NAME=VALUE)")
+                    name, val = pair.split("=", 1)
+                    val = val.strip()
+                    try:
+                        _STATE_ENCODING[name.strip()] = _verilog_literal_to_int(val)
+                    except ValueError:
+                        _STATE_ENCODING[name.strip()] = int(val)
             i += 1
             continue
 
@@ -1849,10 +1855,22 @@ def render_verilog(ir: CircuitIR) -> str:
         width_decl = f"[{state_sig_def.width - 1}:0] " if state_sig_def and state_sig_def.width > 1 else ""
         kind = "reg" if (driven_by_comb_block or driven_by_always) else "wire"
         lines.append(f"{kind} {width_decl}{next_sig};")
+    always_driven_wires = set()
+    for op in ir.combinational_ops:
+        if op.target_concat:
+            if any(signals_by_id.get(t) and signals_by_id[t].needs_always_block for t in op.target_concat):
+                always_driven_wires.update(op.target_concat)
+        elif op.target and signals_by_id.get(op.target) and signals_by_id[op.target].needs_always_block:
+            always_driven_wires.add(op.target)
+    for cb in ir.comb_blocks:
+        if not cb.target_is_plain_wire_port:
+            always_driven_wires.add(cb.target_signal)
+
     for wire_name in sorted(wires_to_declare):
         sig_def = signals_by_id.get(wire_name)
         width_decl = f"[{sig_def.width - 1}:0] " if sig_def and sig_def.width > 1 else ""
-        lines.append(f"wire {width_decl}{wire_name};")
+        kind = "reg" if wire_name in always_driven_wires else "wire"
+        lines.append(f"{kind} {width_decl}{wire_name};")
     lines.append("")
 
     for ru in ir.register_updates:

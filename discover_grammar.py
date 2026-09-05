@@ -132,6 +132,41 @@ def load_eval_problems(problem_file: Path) -> dict[str, dict]:
     return problems
 
 
+def load_raw_test_pool(path: Path) -> tuple[list[dict], dict[str, dict]]:
+    """Load a pool of raw (UNGRADED) {task_id, description, module_interface}
+    records for use ONLY in the test-sampling role of run_discovery.
+
+    That role (_try_one, via test_grammar) only checks structural VSL
+    validity -- parse_vsl -> validate_circuit -> render_verilog all
+    succeeding -- it never runs a simulation and never needs an
+    execution_score. So, unlike the reference-example role (which requires
+    load_successful_examples()'s execution_score == 1.0 history), a dataset
+    with no testbenches at all (e.g. RTL-Coder_small) can still serve as a
+    valid, and much larger and more varied, test pool here.
+
+    Returns (examples, eval_problems) in the same shapes run_discovery
+    already expects: examples is a list of {task_id, description, vsl_text}
+    (vsl_text is always None here -- nothing to seed reference prompts with,
+    since this pool is never used as reference_set); eval_problems maps
+    task_id -> {"prompt": module_interface} so test_grammar can look up each
+    task's module interface exactly like it does for graded problem files.
+    """
+    examples = []
+    eval_problems = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            rec = json.loads(line)
+            examples.append({
+                "task_id": rec["task_id"],
+                "description": rec["description"],
+                "vsl_text": None,
+            })
+            eval_problems[rec["task_id"]] = {"prompt": rec.get("module_interface", "")}
+    return examples, eval_problems
+
+
 # --- testing a candidate grammar ---------------------------------------------
 
 async def _try_one(task_id, description, module_interface, grammar_text) -> dict:
@@ -231,6 +266,7 @@ async def run_discovery(
     output_path: Path,
     test_history_path: Path | None = None,
     test_problem_file: Path | None = None,
+    test_problems_raw: Path | None = None,
     seed: int = 0,
 ):
     examples = load_successful_examples(history_path)
@@ -247,7 +283,15 @@ async def run_discovery(
     # a different, harder style of description than the Machine-derived
     # reference set), test on that instead -- a much better check of whether
     # the grammar actually generalizes rather than just memorizing patterns.
-    if test_history_path is not None:
+    raw_test_eval_problems = {}
+    if test_problems_raw is not None:
+        test_examples, raw_test_eval_problems = load_raw_test_pool(test_problems_raw)
+        print(f"Loaded {len(test_examples)} raw (ungraded) descriptions from {test_problems_raw} "
+              f"for testing -- structural-validity role only, no testbenches needed "
+              f"(separate from the {len(examples)} reference examples)")
+        if not test_examples:
+            raise SystemExit(f"No usable records found in {test_problems_raw}.")
+    elif test_history_path is not None:
         test_examples = load_successful_examples(test_history_path)
         print(f"Loaded {len(test_examples)} examples from {test_history_path} for testing "
               f"(separate from the {len(examples)} reference examples)")
@@ -261,7 +305,9 @@ async def run_discovery(
 
 
     eval_problems = load_eval_problems(problem_file)
-    if test_problem_file is not None:
+    if raw_test_eval_problems:
+        eval_problems = {**eval_problems, **raw_test_eval_problems}
+    elif test_problem_file is not None:
         eval_problems = {**eval_problems, **load_eval_problems(test_problem_file)}
     elif test_history_path is not None:
         missing = {ex["task_id"] for ex in test_examples} - eval_problems.keys()
@@ -348,6 +394,7 @@ def main(
     problems: Path = typer.Option(..., help="Path to the VerilogEval-style problem JSONL matching --history (task_id -> module interface / reference test)."),
     test_history: Path = typer.Option(None, help="Optional separate history JSONL (e.g. from a run against VerilogDescription_Human) used to TEST each candidate grammar. If omitted, tests on the same file as --history."),
     test_problems: Path = typer.Option(None, help="Problem JSONL matching --test-history (needed if the test set's task_ids come from a different problem file, e.g. VerilogEval_Human.jsonl vs VerilogEval_Machine.jsonl). If omitted, --problems is reused."),
+    test_problems_raw: Path = typer.Option(None, help="Optional path to a raw, UNGRADED {task_id, description, module_interface} JSONL pool (e.g. built from a dataset with no testbenches, like RTL-Coder_small) used ONLY for the per-round structural-validity test sample. Takes precedence over --test-history/--test-problems if given."),
     rounds: int = typer.Option(8, help="Number of discover -> test -> refine rounds."),
     sample_size: int = typer.Option(150, help="Number of descriptions to test each candidate grammar against, per round."),
     output: Path = typer.Option(Path("discovered_grammar.txt"), help="Where to write the final grammar text."),
@@ -355,7 +402,8 @@ def main(
 ):
     asyncio.run(run_discovery(
         history, rounds, sample_size, problems, output,
-        test_history_path=test_history, test_problem_file=test_problems, seed=seed,
+        test_history_path=test_history, test_problem_file=test_problems,
+        test_problems_raw=test_problems_raw, seed=seed,
     ))
 
 
