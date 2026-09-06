@@ -6,11 +6,13 @@ except RuntimeError:
     pass
 
 import asyncio
+import contextvars
 import json
 import os
 import pathlib
 import re
 import sys
+import time
 
 import typer
 from pydantic import BaseModel, Field
@@ -47,6 +49,60 @@ def _is_retryable_error(exc: Exception) -> bool:
     return any(marker in text for marker in _RETRYABLE_MARKERS)
 
 
+#--per-task metrics: token usage, wall-clock time, model-request counts, and
+# retry counts, so runs can be compared on more than pass/fail. Answers the
+# boss's question ("is VSL for correctness or for debugging?") by making it
+# possible to compare force-vsl vs. plain/no-vsl runs on cost (tokens, time,
+# number of model calls), not just on pass rate.
+#
+# Implemented with a ContextVar instead of threading a `metrics` parameter
+# through every function, since asyncio.Task copies the context at creation
+# time -- each concurrent task in process_file's asyncio.gather(...) gets
+# its own isolated accumulator automatically, with no risk of one task's
+# concurrent calls polluting another's counts. Any function outside
+# process_file's per-task scope (e.g. a bare `agent.run()` call from a
+# script) just sees None and skips recording -- this is purely additive,
+# it changes no existing behavior or return values.
+_current_metrics: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
+    "_current_metrics", default=None
+)
+
+
+def _new_metrics() -> dict:
+    return {
+        "model_calls": 0,        # successful run_agent_with_retry() calls
+        "model_requests": 0,     # sum of Usage().requests -- actual HTTP calls to the
+                                  # model, including pydantic-ai's own internal retries
+                                  # to satisfy structured-output validation (the closest
+                                  # thing to a "tool call" count in this pipeline, since
+                                  # none of these agents invoke external tools)
+        "request_tokens": 0,
+        "response_tokens": 0,
+        "total_tokens": 0,
+        "llm_wall_time_s": 0.0,
+        "grading_calls": 0,       # iverilog/vvp grading invocations
+        "grading_wall_time_s": 0.0,
+        "retries": 0,             # our own transient-error backoff retries
+    }
+
+
+def _record_llm_usage(result, elapsed: float) -> None:
+    m = _current_metrics.get()
+    if m is None:
+        return
+    m["model_calls"] += 1
+    m["llm_wall_time_s"] += elapsed
+    try:
+        usage = result.usage()
+    except Exception:
+        usage = None
+    if usage is not None:
+        m["model_requests"] += getattr(usage, "requests", 0) or 0
+        m["request_tokens"] += getattr(usage, "request_tokens", 0) or 0
+        m["response_tokens"] += getattr(usage, "response_tokens", 0) or 0
+        m["total_tokens"] += getattr(usage, "total_tokens", 0) or 0
+
+
 async def run_agent_with_retry(agent, agent_input, *, task_id: str | None = None,
                                 label: str = "", max_retries: int = 7,
                                 base_delay: float = 5.0, max_delay: float = 60.0):
@@ -69,11 +125,17 @@ async def run_agent_with_retry(agent, agent_input, *, task_id: str | None = None
     attempt = 0
     while True:
         try:
-            return await agent.run(agent_input)
+            t0 = time.perf_counter()
+            result = await agent.run(agent_input)
+            _record_llm_usage(result, time.perf_counter() - t0)
+            return result
         except Exception as exc:
             attempt += 1
             if not _is_retryable_error(exc) or attempt > max_retries:
                 raise
+            m = _current_metrics.get()
+            if m is not None:
+                m["retries"] += 1
             delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
             tag = f"[{task_id}] " if task_id else ""
             print(f"  {tag}[RETRY] transient error on {label or 'agent call'} "
@@ -571,6 +633,8 @@ async def _grade_code(code: str, eval_problem: dict | None, task_id: str | None)
             "gradeable": False,
         }
 
+    m = _current_metrics.get()
+    t0 = time.perf_counter()
     try:
         # check_correctness_with_details() is synchronous and spends most of
         # its time in a blocking p.join(); run it in a worker thread so it
@@ -584,13 +648,23 @@ async def _grade_code(code: str, eval_problem: dict | None, task_id: str | None)
             timeout=45.0,
         )
     except asyncio.TimeoutError:
+        if m is not None:
+            m["grading_calls"] += 1
+            m["grading_wall_time_s"] += time.perf_counter() - t0
         return {"code": code, "score": 0.0,
                 "feedback": "Grading harness hard-timed-out after 45s (likely a stuck "
                              "Manager()/subprocess spawn) -- treating as a failed attempt "
                              "so the caller's retry logic can re-attempt.",
                 "gradeable": True}
     except Exception as e:
+        if m is not None:
+            m["grading_calls"] += 1
+            m["grading_wall_time_s"] += time.perf_counter() - t0
         return {"code": code, "score": 0.0, "feedback": f"Execution harness raised an exception: {e}", "gradeable": True}
+
+    if m is not None:
+        m["grading_calls"] += 1
+        m["grading_wall_time_s"] += time.perf_counter() - t0
 
     passed = bool(test_result.get("passed", False))
     if passed:
@@ -1067,6 +1141,7 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
 
     completed = 0
     failed = 0
+    all_metrics: list[dict] = []  # one entry per completed task -- feeds the run-level summary below
     # lock so concurrent tasks don't mess up the file when writing at once
     write_lock = asyncio.Lock()
     semaphore = asyncio.Semaphore(concurrency)
@@ -1074,6 +1149,8 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
     async def _run_one(data: dict):
         nonlocal completed, failed
         task_id = data.get("task_id")
+        task_metrics = _new_metrics()
+        metrics_ctx_token = _current_metrics.set(task_metrics)
         simple_desc = data.get("simple_description", "")
         detail_desc = data.get("detail_description", "")
 
@@ -1086,63 +1163,73 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
             f"(do not rename the module or any port):\n{interface}"
         )
 
-        async with semaphore:
-            print(f"\n Processing Task: {task_id} ")
-            print(f"  [{task_id}] [DEBUG] Module interface given to gir_agent:\n{interface}\n")
+        try:
+            async with semaphore:
+                task_wall_start = time.perf_counter()  # starts after the concurrency-limit wait, so this reflects actual work time, not queueing
+                print(f"\n Processing Task: {task_id} ")
+                print(f"  [{task_id}] [DEBUG] Module interface given to gir_agent:\n{interface}\n")
 
-            checkpoint_path = checkpoint_dir / f"{label}_{task_id}.json"
-            try:
-                result = await enhance_prompt(
-                    prompt_text,
-                    mode=mode,
-                    task_id=task_id,
-                    eval_problem=problem,
-                    use_gir=use_gir,
-                    force_vsl=force_vsl,
-                    checkpoint_path=checkpoint_path,
-                )
-            except Exception as e:
-                print(f"  ERROR on {task_id}: {type(e).__name__}: {e}")
-                print(f"  skipping this task (progress saved to {checkpoint_path} -- "
-                      f"rerunning this task_id will resume from there instead of "
-                      f"redoing the VSL evaluation from scratch)")
-                async with write_lock:
-                    failed += 1
-                return
-            else:
-                # task fully succeeded -- checkpoint no longer needed
-                checkpoint_path.unlink(missing_ok=True)
+                checkpoint_path = checkpoint_dir / f"{label}_{task_id}.json"
+                try:
+                    result = await enhance_prompt(
+                        prompt_text,
+                        mode=mode,
+                        task_id=task_id,
+                        eval_problem=problem,
+                        use_gir=use_gir,
+                        force_vsl=force_vsl,
+                        checkpoint_path=checkpoint_path,
+                    )
+                except Exception as e:
+                    print(f"  ERROR on {task_id}: {type(e).__name__}: {e}")
+                    print(f"  skipping this task (progress saved to {checkpoint_path} -- "
+                          f"rerunning this task_id will resume from there instead of "
+                          f"redoing the VSL evaluation from scratch)")
+                    async with write_lock:
+                        failed += 1
+                    return
+                else:
+                    # task fully succeeded -- checkpoint no longer needed
+                    checkpoint_path.unlink(missing_ok=True)
 
-        print(f"\n  [{task_id}] Final Execution Score: {result['final_execution_score']}")
-        if result.get("history"):
-            print(f"  [{task_id}] Feedback: {result['history'][-1]['execution_feedback'][:150]}")
+            task_metrics["total_wall_time_s"] = round(time.perf_counter() - task_wall_start, 3)
+            task_metrics["num_rounds"] = len(result.get("history", []))
 
-        history_record = {
-            "task_id": task_id,
-            "final_execution_score": result["final_execution_score"],
-            "rounds": [
-                {
-                    "round": h["round"],
-                    "execution_score": h["execution_score"],
-                    "reward": h.get("reward"),
-                    "change_made": h.get("change_made"),
-                    "execution_feedback": h.get("execution_feedback"),
-                    "prompt": h.get("prompt"),
-                    "vsl_text": h.get("vsl_text"),
-                }
-                for h in result.get("history", [])
-            ],
-        }
+            print(f"\n  [{task_id}] Final Execution Score: {result['final_execution_score']}")
+            if result.get("history"):
+                print(f"  [{task_id}] Feedback: {result['history'][-1]['execution_feedback'][:150]}")
+            print(f"  [{task_id}] [METRICS] {json.dumps(task_metrics)}")
 
-        async with write_lock:
-            with open(history_file, "a", encoding="utf-8") as hist_f:
-                hist_f.write(json.dumps(history_record) + "\n")
-            with open(output_file, "a", encoding="utf-8") as out_f:
-                out_f.write(json.dumps({
-                    "task_id": task_id,
-                    "completion": result["final_output"],
-                }) + "\n")
-            completed += 1
+            history_record = {
+                "task_id": task_id,
+                "final_execution_score": result["final_execution_score"],
+                "metrics": task_metrics,
+                "rounds": [
+                    {
+                        "round": h["round"],
+                        "execution_score": h["execution_score"],
+                        "reward": h.get("reward"),
+                        "change_made": h.get("change_made"),
+                        "execution_feedback": h.get("execution_feedback"),
+                        "prompt": h.get("prompt"),
+                        "vsl_text": h.get("vsl_text"),
+                    }
+                    for h in result.get("history", [])
+                ],
+            }
+
+            async with write_lock:
+                with open(history_file, "a", encoding="utf-8") as hist_f:
+                    hist_f.write(json.dumps(history_record) + "\n")
+                with open(output_file, "a", encoding="utf-8") as out_f:
+                    out_f.write(json.dumps({
+                        "task_id": task_id,
+                        "completion": result["final_output"],
+                    }) + "\n")
+                completed += 1
+                all_metrics.append(task_metrics)
+        finally:
+            _current_metrics.reset(metrics_ctx_token)
 
     # clear the output files before the concurrent runs start
     open(output_file, "w", encoding="utf-8").close()
@@ -1154,6 +1241,34 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
     print(f"Saved per-round history to {history_file}")
     if failed:
         print(f"{failed} task(s) failed and were skipped.")
+
+    if all_metrics:
+        def _avg(key):
+            vals = [m.get(key, 0) for m in all_metrics]
+            return round(sum(vals) / len(vals), 3) if vals else 0.0
+
+        summary = {
+            "mode": mode,
+            "use_gir": use_gir,
+            "force_vsl": force_vsl,
+            "label": label,
+            "num_tasks": len(all_metrics),
+            "avg_model_calls": _avg("model_calls"),
+            "avg_model_requests": _avg("model_requests"),
+            "avg_request_tokens": _avg("request_tokens"),
+            "avg_response_tokens": _avg("response_tokens"),
+            "avg_total_tokens": _avg("total_tokens"),
+            "total_tokens_all_tasks": sum(m.get("total_tokens", 0) for m in all_metrics),
+            "avg_llm_wall_time_s": _avg("llm_wall_time_s"),
+            "avg_grading_wall_time_s": _avg("grading_wall_time_s"),
+            "avg_total_wall_time_s": _avg("total_wall_time_s"),
+            "avg_retries": _avg("retries"),
+            "avg_num_rounds": _avg("num_rounds"),
+        }
+        summary_file = output_dir / f"{mode}{suffix}_metrics_summary_{label}.json"
+        summary_file.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        print(f"Saved run-level metrics summary to {summary_file}")
+        print(json.dumps(summary, indent=2))
 
 
 @app.command()
