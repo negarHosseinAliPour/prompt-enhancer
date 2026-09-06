@@ -1,0 +1,162 @@
+# VSL QUICK‑START GUIDE (human‑readable spec for the VSL parser)
+
+**Purpose** – This guide tells a language model how to turn a natural‑language Verilog description into the intermediate language **VSL**.  The downstream Python code will read only the VSL lines you produce and emit real Verilog.  Follow the exact line shapes, spaces and symbols shown in the examples; any deviation raises a `VSLParseError`.
+
+---
+## 1. Core building blocks
+
+| Concept | VSL line (copy‑paste) | When to use |
+|---------|----------------------|-------------|
+| **Plain combinational assignment** | `out = a & b` | A single expression, no clock, no condition. |
+| **Conditional combinational block** | `COMB out\n  cond1 -> expr1\n| cond2 -> expr2\n| * -> default` | One or more mutually‑exclusive conditions.  The first matching line wins – this encodes priority (e.g., *load* before *shift*). |
+| **Register (flip‑flop)** | `REG name[width] @edge_list reset_clause->reset_val [PORT]`<br>`  * -> data_expr`<br>`| cond -> expr …` | Storage element.  `edge_list` describes clock edges and any *asynchronous* resets.  `reset_clause` (optional) describes a *synchronous* reset.  Append the literal word `PORT` if the register is a top‑level output. |
+| **State list** | `STATES: S0=0, S1=1, …` | Gives symbolic names to numeric state codes – required before any FSM that references a state name. |
+| **Moore FSM (state register + next‑state logic)** | `REG state[bits] @clk.pos reset.sync->S0 NEXT=next_state`<br>`COMB next_state …` | Standard pattern: a state register plus a combinational block that computes the next state. |
+| **Mealy output** | `COMB out …` (uses current `state` and inputs) | Output depends on both state and inputs – no extra register needed. |
+| **Ternary shortcut** | `z = sel=1 ? b : a` | One‑line conditional assignment (equivalent to a two‑line `COMB`). |
+
+---
+## 2. Exact token rules the parser understands
+
+1. **Edges (`@…`)** – space‑separated list after the `@` symbol.
+   * `clk.pos` – rising edge of signal `clk`
+   * `clk.neg` – falling edge
+   * `areset.pos` – *asynchronous* reset (just list the reset signal; no `.sync`).
+   * You may list several edges, e.g. `@clk.pos areset.pos`.
+2. **Synchronous reset clause** – appears **after** the edge list, before the `->` arrow.
+   * `reset.sync`    – active‑high synchronous reset.
+   * `resetn.syncneg` – active‑low synchronous reset (`n` → low‑active, `neg` → polarity).
+3. **Reset value** – any constant or expression, e.g. `0`, `1'b1`, `8'h34`, `{4{1'b0}}`, or a sliced expression `(A+B)[3:0]`.
+4. **Port flag** – the literal word `PORT` after the reset clause makes the register an external output.
+5. **Assignments inside a `REG`**
+   * `* -> expr` – default (no condition) case; must be present unless every possible condition is covered.
+   * `cond -> expr` – conditional branches separated by `|`.  Order matters – top line has highest priority.
+6. **Conditions** – simple equality (`sig=1`), inequality (`sig!=0`), relational (`sig>5`), logical‑AND with `&` (e.g. `state=A & x=1`).  Whole condition may be wrapped in parentheses, but **individual terms cannot contain parentheses**.
+7. **Vectors & slices** – `q[4]` is a 4‑bit vector; `q[2:0]` a slice.  You may place a slice **after any expression** using parentheses, e.g. `(temp)[7:0]`.  *Do not* start an expression with a leading `(` unless you are slicing an already‑written expression – the parser cannot handle a leading nested parenthesis.
+8. **Operators** – `+ - * / & | ^ ~ << >> ? :` work exactly as in Verilog.  Unary `~` works on scalars or vectors.  Concatenation uses `{ … }`.
+9. **Comments** – any line that begins with `#` is ignored; feel free to add them for clarity.
+
+---
+## 3. Translation recipe (English → VSL)
+
+1. **Read the fixed interface** – ports are already declared in the problem statement; never rename them.
+2. **Identify the behaviour type** – combinational only ⇒ plain `=` or a `COMB` block; needs state ⇒ `REG` (maybe with reset) plus optional `COMB` for next‑state logic.
+3. **Map key English phrases**
+   * *rising edge* → `clk.pos`
+   * *falling edge* → `clk.neg`
+   * *asynchronous reset* → list the reset signal in the `@` list (no `.sync`).
+   * *synchronous reset* → `reset.sync` (or `resetn.syncneg`).
+   * *priority* → order the `|`‑separated lines from most to least important.
+   * *shift left/right* → `<< n` / `>> n`.  *rotate* → use concatenation, e.g. `{q[0], q[7:1]}`.
+   * *state machine* → start with `STATES:` then the Moore or Mealy pattern shown below.
+4. **Write the VSL** – keep line breaks, spaces and the `|` separator exactly as in the examples.
+5. **Validate** – every `REG` must have a `* -> …` line (or you must cover all cases explicitly).  Every `COMB` must also have a `* -> …` default unless the spec guarantees a covering condition.
+6. **Finish** – no trailing semicolons, no extra Verilog keywords.
+
+---
+## 4. Worked examples (real description → VSL)
+
+### Example 1 – Constant output (plain assignment)
+**Description:**
+> Assign the constant logic high `1'b1` to the output `one`.
+**VSL:**
+```
+one = 1
+```
+---
+### Example 2 – Asynchronous reset register (negative edge)
+**Description:**
+> A register `q` captures `a` on the *negative* edge of `clock`.  When `areset` goes high it must be cleared to `0` **asynchronously**.
+**VSL:**
+```
+REG q @clock.neg areset.pos->0 PORT
+  * -> a
+```
+---
+### Example 3 – Synchronous reset with priority (4‑bit shift register)
+**Description:**
+> A 4‑bit register `q` updates on the rising edge of `clk`.  Active‑high synchronous reset forces `q` to `0`.  When `load` is high the register loads `data` (load overrides shift).  Otherwise, if `ena` is high the register shifts right logically, inserting a zero at the MSB.  If neither `load` nor `ena` is active, `q` holds its value.
+**VSL:**
+```
+REG q[4] @clk.pos reset.sync->0 PORT
+  load=1 -> data
+| ena=1  -> q >> 1
+| *      -> q
+```
+---
+### Example 4 – Barrel shifter (vector concatenation, combinational block)
+**Description:**
+> A 4‑bit barrel shifter takes input `A` and a 2‑bit shift amount `B`.  `B=00` passes `A` through, `01` shifts left by one, `10` shifts right by one, `11` shifts right by two.
+**VSL:**
+```
+COMB Y
+    B=0 -> A
+  | B=1 -> {A[2:0],1'b0}
+  | B=2 -> {1'b0,A[3:1]}
+  | B=3 -> {2'b0,A[3:2]}
+  | *   -> 4'b0
+```
+---
+### Example 5 – Moore FSM with explicit state list, synchronous reset, and output
+**Description:**
+> Five states `S0…S4`.  On each clock cycle the FSM advances `S0→S1→S2→S3→S4→S4`.  Active‑high synchronous reset forces the FSM to `S0`.  Output `done` is high only in `S4`.
+**VSL:**
+```
+STATES: S0=0, S1=1, S2=2, S3=3, S4=4
+
+REG state[3] @clk.pos reset.sync->S0 NEXT=next_state
+
+COMB next_state
+  state=S0 -> S1
+| state=S1 -> S2
+| state=S2 -> S3
+| state=S3 -> S4
+| state=S4 -> S4
+| *       -> S0
+
+COMB done
+  state=S4 -> 1
+| *       -> 0
+```
+---
+### Example 6 – Mealy FSM with *asynchronous* reset (toggle example)
+**Description:**
+> Two states `A` and `B`.  Asynchronous active‑high reset `areset` goes to `A`.  On each rising edge, if in `A` and `x=1` transition to `B`; otherwise stay.  Output `z` is 1 when (`A` && `x`) **or** (`B` && `!x`).
+**VSL:**
+```
+STATES: A=0, B=1
+
+REG state @clk.pos areset.pos->A NEXT=next_state
+
+COMB next_state
+  state=A & x=1 -> B
+| state=B          -> B
+| *                -> A
+
+COMB z
+  state=A & x=1 -> 1
+| state=B & x=0 -> 1
+| *            -> 0
+```
+---
+### Example 7 – Using a slice after a computed expression (avoid nested parentheses)
+**Description:**
+> Compute the low‑4‑bits of `a + (b << 1)` and drive them to `out`.
+**VSL (two‑step trick):**
+```
+temp = a + (b << 1)
+out = (temp)[3:0]
+```
+---
+## 5. Minimal checklist (copy‑paste when you are done)
+- `REG name[width] @edge_list reset_clause->reset_val [PORT]`
+- `COMB name` followed by `cond -> expr` lines separated by `|`
+- `STATES: name=code, …` before any FSM that uses symbolic states
+- `NEXT=signal` after a `REG` line for Moore machines
+- Plain `out = expr`
+- Ternary `z = cond ? a : b`
+- Always include a `*` default branch in a `COMB` or `REG` block unless the spec guarantees coverage.
+- Slices may follow any expression, but **do not start the line with a leading '('**; compute the expression first if you need nested parentheses.
+- No Verilog keywords (`module`, `input`, …) – only VSL lines.
+
+Keep this guide handy; replace the signal names and constants with those from the problem description and you will produce a syntactically correct VSL that the downstream parser can turn into Verilog.

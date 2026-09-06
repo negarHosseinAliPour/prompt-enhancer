@@ -1,0 +1,882 @@
+{"task_id": "mux2to1v", "prompt": "module top_module (\n\tinput [99:0] a,\n\tinput [99:0] b,\n\tinput sel,\n\toutput [99:0] out\n);\n"}
+{"task_id": "m2014_q6b", "prompt": "module top_module(\n\tinput [3:1] y,\n\tinput w,\n\toutput reg Y2);\n"}
+{"task_id": "ringer", "prompt": "module top_module(\n\tinput ring, \n\tinput vibrate_mode,\n\toutput ringer,\n\toutput motor\n);\n"}
+{"task_id": "alwaysblock1", "prompt": "module top_module(\n\tinput a, \n\tinput b,\n\toutput out_assign,\n\toutput reg out_alwaysblock\n);\n"}
+{"task_id": "zero", "prompt": "module top_module(\n\toutput zero);\n"}
+{"task_id": "circuit7", "prompt": "module top_module (\n\tinput clk,\n\tinput a, \n\toutput reg q\n);\n"}
+{"task_id": "ece241_2014_q5a", "prompt": "module top_module (\n\tinput clk,\n\tinput areset,\n\tinput x,\n\toutput z\n);\n"}
+{"task_id": "fsm3", "prompt": "module top_module (\n\tinput clk,\n\tinput in,\n\tinput areset,\n\toutput out\n);\n"}
+{"task_id": "vector2", "prompt": "module top_module (\n\tinput [31:0] in,\n\toutput [31:0] out\n);\n"}
+{"task_id": "m2014_q4c", "prompt": "module top_module (\n\tinput clk,\n\tinput d,\n\tinput r,\n\toutput logic q\n);\n"}
+{"task_id": "mt2015_q4a", "prompt": "module top_module(\n\tinput x,\n\tinput y,\n\toutput z);\n"}
+{"task_id": "shift18", "prompt": "module top_module(\n\tinput clk,\n\tinput load,\n\tinput ena,\n\tinput [1:0] amount,\n\tinput [63:0] data,\n\toutput reg [63:0] q);\n"}
+{"task_id": "ece241_2013_q8", "prompt": "module top_module (\n\tinput clk,\n\tinput aresetn,\n\tinput x,\n\toutput reg z\n);\n"}
+{"task_id": "m2014_q6", "prompt": "module top_module (\n\tinput clk,\n\tinput reset,\n\tinput w,\n\toutput z\n);\n"}
+{"task_id": "fsm_ps2data", "prompt": "module top_module (\n\tinput clk,\n\tinput [7:0] in,\n\tinput reset,\n\toutput [23:0] out_bytes,\n\toutput done\n);\n"}
+{"task_id": "2012_q2b", "prompt": "module top_module (\n\tinput [5:0] y,\n\tinput w,\n\toutput Y1,\n\toutput Y3\n);\n"}
+{"task_id": "vector0", "prompt": "module top_module(\n\tinput [2:0] vec, \n\toutput [2:0] outv,\n\toutput o2,\n\toutput o1,\n\toutput o0\n);\n"}
+{"task_id": "kmap4", "prompt": "module top_module (\n\tinput a, \n\tinput b,\n\tinput c,\n\tinput d,\n\toutput reg out\n);\n"}
+{"task_id": "vector1", "prompt": "module top_module (\n\tinput [15:0] in,\n\toutput [7:0] out_hi,\n\toutput [7:0] out_lo\n);\n"}
+{"task_id": "norgate", "prompt": "module top_module(\n\tinput a, \n\tinput b,\n\toutput out\n);\n"}
+{"task_id": "alwaysblock2", "prompt": "module top_module(\n\tinput clk,\n\tinput a, \n\tinput b,\n\toutput out_assign,\n\toutput reg out_always_comb,\n\toutput reg out_always_ff\n);\n"}
+{"task_id": "m2014_q6c", "prompt": "module top_module (\n\tinput [6:1] y,\n\tinput w,\n\toutput Y2,\n\toutput Y4\n);\n"}
+{"task_id": "mux256to1", "prompt": "module top_module (\n\tinput [255:0] in,\n\tinput [7:0] sel,\n\toutput  out\n);\n"}
+{"task_id": "2014_q4a", "prompt": "module top_module (\n\tinput clk,\n\tinput w,\n\tinput R,\n\tinput E,\n\tinput L,\n\toutput reg Q\n);\n"}
+{"task_id": "ece241_2014_q4", "prompt": "module top_module (\n\tinput clk,\n\tinput x,\n\toutput z\n);\n"}
+{"task_id": "circuit4", "prompt": "module top_module (\n\tinput a, \n\tinput b, \n\tinput c, \n\tinput d,\n\toutput q\n);\n"}
+{"task_id": "rule110", "prompt": "module top_module(\n\tinput clk,\n\tinput load,\n\tinput [511:0] data,\n\toutput reg [511:0] q);\n"}
+{"task_id": "fsm3s", "prompt": "module top_module (\n\tinput clk,\n\tinput in,\n\tinput reset,\n\toutput out\n);\n"}
+{"task_id": "circuit5", "prompt": "module top_module (\n\tinput [3:0] a, \n\tinput [3:0] b, \n\tinput [3:0] c, \n\tinput [3:0] d,\n\tinput [3:0] e,\n\toutput reg [3:0] q\n);\n"}
+{"task_id": "bugs_mux2", "prompt": "module top_module (\n\tinput sel,\n\tinput [7:0] a,\n\tinput [7:0] b,\n\toutput reg [7:0] out\n);\n"}
+{"task_id": "mt2015_muxdff", "prompt": "module top_module(\n\tinput clk,\n\tinput L,\n\tinput q_in,\n\tinput r_in,\n\toutput reg Q);\n"}
+{"task_id": "edgecapture", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\tinput [31:0] in,\n\toutput reg [31:0] out);\n"}
+{"task_id": "dff8", "prompt": "module top_module(\n\tinput clk,\n\tinput [7:0] d,\n\toutput reg [7:0] q);\n"}
+{"task_id": "ece241_2014_q1c", "prompt": "module top_module (\n\tinput [7:0] a,\n\tinput [7:0] b,\n\toutput [7:0] s,\n\toutput overflow\n);\n"}
+{"task_id": "review2015_fsmonehot", "prompt": "module top_module(\n    input d,\n    input done_counting,\n    input ack,\n    input [9:0] state,    // 10-bit one-hot current state\n    output B3_next,\n    output S_next,\n    output S1_next,\n    output Count_next,\n    output Wait_next,\n    output done,\n    output counting,\n    output shift_ena\n );\n"}
+{"task_id": "counter_2bc", "prompt": "module top_module(\n    input clk,\n    input areset,\n    input train_valid,\n    input train_taken,\n    output logic [1:0] state\n);\n"}
+{"task_id": "always_casez", "prompt": "module top_module (\n\tinput [7:0] in,\n\toutput reg [2:0] pos\n);\n"}
+{"task_id": "always_nolatches", "prompt": "module top_module (\n\tinput [15:0] scancode,\n\toutput reg left,\n\toutput reg down,\n\toutput reg right,\n\toutput reg up\n);\n"}
+{"task_id": "m2014_q4j", "prompt": "module top_module (\n\tinput [3:0] x,\n\tinput [3:0] y,\n\toutput [4:0] sum\n);\n"}
+{"task_id": "history_shift", "prompt": "module top_module\n(\n    input clk,\n    input areset,\n    input predict_valid,\n    input predict_taken,\n    output logic [31:0] predict_history,\n    \n    input train_mispredicted,\n    input train_taken,\n    input [31:0] train_history\n);\n"}
+{"task_id": "wire_decl", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\tinput c,\n\tinput d,\n\toutput out,\n\toutput out_n );\n"}
+{"task_id": "dff", "prompt": "module top_module(\n\tinput clk,\n\tinput d,\n\toutput reg q);\n"}
+{"task_id": "ece241_2013_q12", "prompt": "module top_module (\n\tinput clk,\n\tinput enable,\n\tinput S,\n\tinput A,\n\tinput B,\n\tinput C,\n\toutput reg Z\n);\n"}
+{"task_id": "thermostat", "prompt": "module top_module(\n\tinput mode,\n\tinput too_cold, \n\tinput too_hot,\n\tinput fan_on,\n\toutput heater,\n\toutput aircon,\n\toutput fan\n);\n"}
+{"task_id": "ece241_2013_q2", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\tinput c,\n\tinput d,\n\toutput out_sop,\n\toutput out_pos\n);\n"}
+{"task_id": "lfsr32", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\toutput reg [31:0] q);\n"}
+{"task_id": "circuit3", "prompt": "module top_module (\n\tinput a, \n\tinput b, \n\tinput c, \n\tinput d,\n\toutput q\n);\n"}
+{"task_id": "7420", "prompt": "module top_module(\n\tinput p1a, \n\tinput p1b, \n\tinput p1c, \n\tinput p1d, \n\toutput p1y, \n\tinput p2a, \n\tinput p2b, \n\tinput p2c, \n\tinput p2d, \n\toutput p2y\n);\n"}
+{"task_id": "popcount255", "prompt": "module top_module (\n\tinput [254:0] in,\n\toutput reg [7:0] out\n);\n"}
+{"task_id": "gatesv", "prompt": "module top_module (\n\tinput [3:0] in,\n\toutput [2:0] out_both,\n\toutput [3:1] out_any,\n\toutput [3:0] out_different\n);\n"}
+{"task_id": "circuit6", "prompt": "module top_module (\n\tinput [2:0] a, \n\toutput reg [15:0] q\n);\n"}
+{"task_id": "countslow", "prompt": "module top_module(\n\tinput clk,\n\tinput slowena,\n\tinput reset,\n\toutput reg [3:0] q);\n"}
+{"task_id": "m2014_q4f", "prompt": "module top_module (\n\tinput in1,\n\tinput in2,\n\toutput logic out\n);\n"}
+{"task_id": "m2014_q4h", "prompt": "module top_module(\n\tinput in,\n\toutput out);\n"}
+{"task_id": "fsm1", "prompt": "module top_module (\n\tinput clk,\n\tinput in,\n\tinput areset,\n\toutput out\n);\n"}
+{"task_id": "dualedge", "prompt": "module top_module(\n\tinput clk,\n\tinput d,\n\toutput reg q);\n"}
+{"task_id": "xnorgate", "prompt": "module top_module(\n\tinput a, \n\tinput b,\n\toutput out\n);\n"}
+{"task_id": "mt2015_q4", "prompt": "module top_module(\n\tinput x,\n\tinput y,\n\toutput z);\n"}
+{"task_id": "rotate100", "prompt": "module top_module(\n\tinput clk,\n\tinput load,\n\tinput [1:0] ena,\n\tinput [99:0] data,\n\toutput reg [99:0] q);\n"}
+{"task_id": "review2015_count1k", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\toutput reg [9:0] q);\n"}
+{"task_id": "notgate", "prompt": "module top_module(\n\tinput in,\n\toutput out\n);\n"}
+{"task_id": "fsm_onehot", "prompt": "module top_module (\n\tinput in,\n\tinput [9:0] state,\n\toutput [9:0] next_state,\n\toutput out1,\n\toutput out2);\n"}
+{"task_id": "ece241_2013_q7", "prompt": "module top_module (\n\tinput clk,\n\tinput j,\n\tinput k,\n\toutput reg Q\n);\n"}
+{"task_id": "popcount3", "prompt": "module top_module (\n\tinput [2:0] in,\n\toutput [1:0] out\n);\n"}
+{"task_id": "vector5", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\tinput c,\n\tinput d,\n\tinput e,\n\toutput [24:0] out\n);\n"}
+{"task_id": "lemmings1", "prompt": "module top_module (\n\tinput clk,\n\tinput areset,\n\tinput bump_left,\n\tinput bump_right,\n\toutput walk_left,\n\toutput walk_right\n);\n"}
+{"task_id": "circuit1", "prompt": "module top_module (\n\tinput a, \n\tinput b, \n\toutput q\n);\n"}
+{"task_id": "7458", "prompt": "module top_module(\n\tinput p1a, \n\tinput p1b, \n\tinput p1c, \n\tinput p1d,\n\tinput p1e,\n\tinput p1f,\n\toutput p1y, \n\tinput p2a, \n\tinput p2b, \n\tinput p2c, \n\tinput p2d, \n\toutput p2y\n);\n"}
+{"task_id": "2014_q3c", "prompt": "module top_module (\n\tinput clk,\n\tinput x,\n\tinput [2:0] y,\n\toutput reg Y0,\n\toutput reg z\n);\n"}
+{"task_id": "m2014_q4e", "prompt": "module top_module (\n\tinput in1,\n\tinput in2,\n\toutput logic out\n);\n"}
+{"task_id": "wire4", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\tinput c,\n\toutput w,\n\toutput x,\n\toutput y,\n\toutput z  );\n"}
+{"task_id": "m2014_q4b", "prompt": "module top_module (\n\tinput clk,\n\tinput d,\n\tinput ar,\n\toutput logic q\n);\n"}
+{"task_id": "always_case", "prompt": "module top_module (\n\tinput [2:0] sel,\n\tinput [3:0] data0,\n\tinput [3:0] data1,\n\tinput [3:0] data2,\n\tinput [3:0] data3,\n\tinput [3:0] data4,\n\tinput [3:0] data5,\n\toutput reg [3:0] out\n);\n"}
+{"task_id": "timer", "prompt": "module top_module(\n\tinput clk, \n\tinput load, \n\tinput [9:0] data, \n\toutput tc\n);\n"}
+{"task_id": "review2015_fsmseq", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\tinput data,\n\toutput start_shifting);\n"}
+{"task_id": "dff8r", "prompt": "module top_module(\n\tinput clk,\n\tinput [7:0] d,\n\tinput reset,\n\toutput reg [7:0] q);\n"}
+{"task_id": "edgedetect2", "prompt": "module top_module(\n\tinput clk,\n\tinput [7:0] in,\n\toutput reg [7:0] anyedge);\n"}
+{"task_id": "count1to10", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\toutput reg [3:0] q);\n"}
+{"task_id": "circuit9", "prompt": "module top_module (\n\tinput clk,\n\tinput a, \n\toutput reg [2:0] q\n);\n"}
+{"task_id": "lfsr5", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\toutput reg [4:0] q);\n"}
+{"task_id": "bugs_addsubz", "prompt": "module top_module (\n\tinput do_sub,\n\tinput [7:0] a,\n\tinput [7:0] b,\n\toutput reg [7:0] out,\n\toutput reg result_is_zero\n);\n"}
+{"task_id": "m2014_q3", "prompt": "module top_module (\n\tinput [4:1] x,\n\toutput logic f\n);\n"}
+{"task_id": "bugs_case", "prompt": "module top_module (\n\tinput [7:0] code,\n\toutput reg [3:0] out,\n\toutput reg valid\n);\n"}
+{"task_id": "vectorr", "prompt": "module top_module (\n\tinput [7:0] in,\n\toutput [7:0] out\n);\n"}
+{"task_id": "kmap3", "prompt": "module top_module (\n\tinput a, \n\tinput b,\n\tinput c,\n\tinput d,\n\toutput reg out\n);\n"}
+{"task_id": "review2015_shiftcount", "prompt": "module top_module(\n\tinput clk,\n\tinput shift_ena,\n\tinput count_ena,\n\tinput data,\n\toutput reg [3:0] q);\n"}
+{"task_id": "wire", "prompt": "module top_module(\n\tinput in,\n\toutput out);\n"}
+{"task_id": "review2015_fsmshift", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\toutput shift_ena);\n"}
+{"task_id": "count15", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\toutput reg [3:0] q);\n"}
+{"task_id": "always_if", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\tinput sel_b1,\n\tinput sel_b2,\n\toutput out_assign,\n\toutput reg out_always\n);\n"}
+{"task_id": "kmap1", "prompt": "module top_module(\n\tinput a, \n\tinput b,\n\tinput c,\n\toutput out\n);\n"}
+{"task_id": "2013_q2afsm", "prompt": "module top_module (\n\tinput clk,\n\tinput resetn,\n\tinput [3:1] r,\n\toutput [3:1] g\n);\n"}
+{"task_id": "count10", "prompt": "module top_module(\n\tinput clk,\n\tinput reset,\n\toutput reg [3:0] q);\n"}
+{"task_id": "fsm_ps2", "prompt": "module top_module (\n\tinput clk,\n\tinput [7:0] in,\n\tinput reset,\n\toutput done\n);\n"}
+{"task_id": "mux2to1", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\tinput sel,\n\toutput out\n);\n"}
+{"task_id": "gates4", "prompt": "module top_module (\n\tinput [3:0] in,\n\toutput out_and,\n\toutput out_or,\n\toutput out_xor\n);\n"}
+{"task_id": "2014_q3bfsm", "prompt": "module top_module (\n\tinput clk,\n\tinput reset,\n\tinput x,\n\toutput reg z\n);\n"}
+{"task_id": "2013_q2bfsm", "prompt": "module top_module (\n\tinput clk,\n\tinput resetn,\n\tinput x,\n\tinput y,\n\toutput f,\n\toutput g\n);\n"}
+{"task_id": "dff8p", "prompt": "module top_module(\n\tinput clk,\n\tinput [7:0] d,\n\tinput reset,\n\toutput reg [7:0] q);\n"}
+{"task_id": "reduction", "prompt": "module top_module (\n\tinput [7:0] in,\n\toutput parity\n);\n"}
+{"task_id": "fsm3comb", "prompt": "module top_module (\n\tinput in,\n\tinput [1:0] state,\n\toutput reg [1:0] next_state,\n\toutput out\n);\n"}
+{"task_id": "mt2015_q4b", "prompt": "module top_module(\n\tinput x,\n\tinput y,\n\toutput z);\n"}
+{"task_id": "2012_q2fsm", "prompt": "module top_module (\n\tinput clk,\n\tinput reset,\n\tinput w,\n\toutput z\n);\n"}
+{"task_id": "dff16e", "prompt": "module top_module(\n\tinput clk,\n\tinput resetn,\n\tinput [1:0] byteena,\n\tinput [15:0] d,\n\toutput reg [15:0] q);\n"}
+{"task_id": "edgedetect", "prompt": "module top_module(\n\tinput clk,\n\tinput [7:0] in,\n\toutput reg [7:0] pedge);\n"}
+{"task_id": "circuit8", "prompt": "module top_module (\n\tinput clock,\n\tinput a, \n\toutput reg p,\n\toutput reg q\n);\n"}
+{"task_id": "rule90", "prompt": "module top_module(\n\tinput clk,\n\tinput load,\n\tinput [511:0] data,\n\toutput reg [511:0] q);\n"}
+{"task_id": "mt2015_eq2", "prompt": "module top_module(\n\tinput [1:0] A,\n\tinput [1:0] B,\n\toutput z);\n"}
+{"task_id": "gatesv100", "prompt": "module top_module (\n\tinput [99:0] in,\n\toutput [98:0] out_both,\n\toutput [99:1] out_any,\n\toutput [99:0] out_different\n);\n"}
+{"task_id": "m2014_q4a", "prompt": "module top_module (\n\tinput d,\n\tinput ena,\n\toutput logic q\n);\n"}
+{"task_id": "mux256to1v", "prompt": "module top_module (\n\tinput [1023:0] in,\n\tinput [7:0] sel,\n\toutput [3:0] out\n);\n"}
+{"task_id": "mux9to1v", "prompt": "module top_module (\n\tinput [15:0] a,\n\tinput [15:0] b,\n\tinput [15:0] c,\n\tinput [15:0] d,\n\tinput [15:0] e,\n\tinput [15:0] f,\n\tinput [15:0] g,\n\tinput [15:0] h,\n\tinput [15:0] i,\n\tinput [3:0] sel,\n\toutput logic [15:0] out\n);\n"}
+{"task_id": "vectorgates", "prompt": "module top_module(\n\tinput [2:0] a, \n\tinput [2:0] b, \n\toutput [2:0] out_or_bitwise,\n\toutput out_or_logical,\n\toutput [5:0] out_not\n);\n"}
+{"task_id": "fsm3onehot", "prompt": "module top_module (\n\tinput in,\n\tinput [3:0] state,\n\toutput reg [3:0] next_state,\n\toutput out\n);\n"}
+{"task_id": "conditional", "prompt": "module top_module (\n\tinput [7:0] a,\n\tinput [7:0] b,\n\tinput [7:0] c,\n\tinput [7:0] d,\n\toutput reg [7:0] min\n);\n"}
+{"task_id": "gates", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\toutput out_and,\n\toutput out_or,\n\toutput out_xor,\n\toutput out_nand,\n\toutput out_nor,\n\toutput out_xnor,\n\toutput out_anotb\n);\n"}
+{"task_id": "kmap2", "prompt": "module top_module (\n\tinput a, \n\tinput b,\n\tinput c,\n\tinput d,\n\toutput out\n);\n"}
+{"task_id": "2014_q3fsm", "prompt": "module top_module (\n\tinput clk,\n\tinput reset,\n\tinput s,\n\tinput w,\n\toutput reg z\n);\n"}
+{"task_id": "vector4", "prompt": "module top_module (\n\tinput [7:0] in,\n\toutput [31:0] out\n);\n"}
+{"task_id": "m2014_q4k", "prompt": "module top_module (\n\tinput clk,\n\tinput resetn,\n\tinput in,\n\toutput out\n);\n"}
+{"task_id": "always_case2", "prompt": "module top_module (\n\tinput [3:0] in,\n\toutput reg [1:0] pos\n);\n"}
+{"task_id": "fsm2", "prompt": "module top_module (\n\tinput clk,\n\tinput j,\n\tinput k,\n\tinput areset,\n\toutput out\n);\n"}
+{"task_id": "m2014_q4i", "prompt": "module top_module(\n\toutput out);\n"}
+{"task_id": "step_one", "prompt": "module top_module(\n\toutput one);\n"}
+{"task_id": "vector100r", "prompt": "module top_module (\n\tinput [99:0] in,\n\toutput reg [99:0] out\n);\n"}
+{"task_id": "m2014_q4d", "prompt": "module top_module (\n\tinput clk,\n\tinput in,\n\toutput logic out\n);\n"}
+{"task_id": "shift4", "prompt": "module top_module(\n\tinput clk,\n\tinput areset,\n\tinput load,\n\tinput ena,\n\tinput [3:0] data,\n\toutput reg [3:0] q);\n"}
+{"task_id": "truthtable1", "prompt": "module top_module (\n\tinput x3,\n\tinput x2,\n\tinput x1,\n\toutput f\n);\n"}
+{"task_id": "dff8ar", "prompt": "module top_module(\n\tinput clk,\n\tinput [7:0] d,\n\tinput areset,\n\toutput reg [7:0] q);\n"}
+{"task_id": "gates100", "prompt": "module top_module (\n\tinput [99:0] in,\n\toutput out_and,\n\toutput out_or,\n\toutput out_xor\n);\n"}
+{"task_id": "hadd", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\toutput sum,\n\toutput cout\n);\n"}
+{"task_id": "always_if2", "prompt": "module top_module (\n\tinput cpu_overheated,\n\toutput reg shut_off_computer,\n\tinput arrived,\n\tinput gas_tank_empty,\n\toutput reg keep_driving\n);\n"}
+{"task_id": "fsm2s", "prompt": "module top_module (\n\tinput clk,\n\tinput j,\n\tinput k,\n\tinput reset,\n\toutput out\n);\n"}
+{"task_id": "vector3", "prompt": "module top_module (\n\tinput [4:0] a,\n\tinput [4:0] b,\n\tinput [4:0] c,\n\tinput [4:0] d,\n\tinput [4:0] e,\n\tinput [4:0] f,\n\toutput [7:0] w,\n\toutput [7:0] x,\n\toutput [7:0] y,\n\toutput [7:0] z\n);\n"}
+{"task_id": "circuit2", "prompt": "module top_module (\n\tinput a, \n\tinput b, \n\tinput c, \n\tinput d,\n\toutput q\n);\n"}
+{"task_id": "andgate", "prompt": "module top_module(\n\tinput a, \n\tinput b,\n\toutput out\n);\n"}
+{"task_id": "fsm1s", "prompt": "module top_module (\n\tinput clk,\n\tinput in,\n\tinput reset,\n\toutput out\n);\n"}
+{"task_id": "fadd", "prompt": "module top_module (\n\tinput a,\n\tinput b,\n\tinput cin,\n\toutput cout,\n\toutput sum\n);\n"}
+{"task_id": "m2014_q4g", "prompt": "module top_module (\n\tinput in1,\n\tinput in2,\n\tinput in3,\n\toutput logic out\n);\n"}
+{"task_id": "ece241_2014_q3", "prompt": "module top_module (\n\tinput c,\n\tinput d,\n\toutput [3:0] mux_in\n);\n"}
+{"task_id": "ece241_2014_q5b", "prompt": "module top_module (\n\tinput clk,\n\tinput areset,\n\tinput x,\n\toutput z\n);\n"}
+{"task_id": "circuit10", "prompt": "module top_module (\n\tinput clk,\n\tinput a,\n\tinput b,\n\toutput q,\n\toutput state\n);\n"}
+{"task_id": "2012_q1g", "prompt": "module top_module (\n\tinput [4:1] x,\n\toutput logic f\n);\n"}
+{"task_id": "entry_1", "prompt": "module adder(\n    input  [15:0] a,\n    input  [15:0] b,\n    output reg [16:0] sum\n);\n"}
+{"task_id": "entry_3", "prompt": "module xor8(\n    input        clk,\n    input  [7:0] A,\n    input  [7:0] B,\n    output reg [7:0] X\n);\n"}
+{"task_id": "entry_4", "prompt": "module xor_gate (\n    input  wire a,\n    input  wire b,\n    output wire y\n);\n"}
+{"task_id": "entry_5", "prompt": "module dff_async_reset (\n    input wire clk,\n    input wire d,\n    input wire r,\n    output reg q\n);\n"}
+{"task_id": "entry_6", "prompt": "module magnitude_comparison (\n  input [3:0] A,\n  input [3:0] B,\n  output reg eq,\n  output reg gt\n);\n"}
+{"task_id": "entry_7", "prompt": "module greater_than (\n    input [7:0] A,\n    input [7:0] B,\n    input [7:0] C,\n    output Y\n);\n"}
+{"task_id": "entry_8", "prompt": "module barrel_shifter (\n    input [3:0] data_in,\n    input [1:0] control,\n    output [3:0] data_out\n);\n"}
+{"task_id": "entry_9", "prompt": "module async_reset_release (\n  input rst,\n  input clk,\n  input enable,\n  output reg rst_release\n);\n"}
+{"task_id": "entry_10", "prompt": "module mux4to1 (\n    //# {{data|Data Signals}}\n    input  A,\n    input  B,\n    input  C,\n    input  D,\n    output reg X,\n\n    //# {{control|Control Signals}}\n    input  S0,\n    input  S1\n);\n"}
+{"task_id": "entry_11", "prompt": "module adder(\n  input [7:0] A,\n  input [7:0] B,\n  input C,\n  output reg [7:0] sum\n);\n"}
+{"task_id": "entry_12", "prompt": "module and_gate (\n    input A,\n    input B,\n    output Y\n);\n"}
+{"task_id": "entry_13", "prompt": "module my_and_gate (\n    Y ,\n    A1,\n    A2,\n    B1,\n    C1\n);\n"}
+{"task_id": "entry_14", "prompt": "module binary_to_gray(\n    input  [3:0] bin_in,\n    output [3:0] gray_out\n);\n"}
+{"task_id": "entry_15", "prompt": "module dff_ar(\n    input  wire clk,\n    input  wire d,\n    input  wire reset,\n    output reg  q,\n    output reg  q_n\n);\n"}
+{"task_id": "entry_16", "prompt": "module binary_to_gray(\n    input [3:0] binary,\n    input clk,\n    output reg [3:0] gray\n);\n"}
+{"task_id": "entry_17", "prompt": "module barrel_shifter_4bit (\n    input  wire [3:0] data_in,\n    input  wire [1:0] shift_ctrl,\n    output reg  [3:0] data_out\n);\n"}
+{"task_id": "entry_19", "prompt": "module mux4to1(input [3:0] in, input [1:0] sel, output reg out);\n"}
+{"task_id": "entry_20", "prompt": "module calculator(\n    input signed [3:0] a,\n    input signed [3:0] b,\n    input [1:0] op,\n    output reg signed [3:0] result\n);\n"}
+{"task_id": "entry_21", "prompt": "module comparator16 (\n    input  [15:0] A,\n    input  [15:0] B,\n    output reg    out\n);\n"}
+{"task_id": "entry_22", "prompt": "module up_counter_4bit(\n    input CLK,\n    input RST,\n    output reg [3:0] OUT\n);\n"}
+{"task_id": "entry_23", "prompt": "module d_ff_sr(\n    output reg Q,\n    input D,\n    input clk,\n    input sr\n);\n"}
+{"task_id": "entry_24", "prompt": "module bitwise_or (\n    input [3:0] a,\n    input [3:0] b,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_25", "prompt": "module comparator_4bit (\n  input clk,\n  input reset,\n  input [3:0] A,\n  input [3:0] B,\n  output reg greater,\n  output reg less,\n  output reg equal\n);\n"}
+{"task_id": "entry_26", "prompt": "module xor_gate(\n    input A,\n    input B,\n    output Y\n);\n"}
+{"task_id": "entry_27", "prompt": "module binary_output(\n  input [9:0] binary_in,\n  output reg [21*8-1:0] binary_out  // 21 chars, 8 bits each\n);\n"}
+{"task_id": "entry_28", "prompt": "module binary_counter\n   #(parameter BITS = 4)\n   (\n    input wire clk,\n    input wire rst,\n    output reg [BITS-1:0] count\n   );\n"}
+{"task_id": "entry_31", "prompt": "module custom_module (\n    output Y,\n    input A1,\n    input A2,\n    input B1,\n    input B2,\n    input C1\n);\n"}
+{"task_id": "entry_32", "prompt": "module mux4to1 (\n    input  wire in0,\n    input  wire in1,\n    input  wire in2,\n    input  wire in3,\n    input  wire sel0,\n    input  wire sel1,\n    output wire out\n);\n"}
+{"task_id": "entry_33", "prompt": "module and5 (\n    Y,\n    A1,\n    A2,\n    A3,\n    A4,\n    B1\n);\n"}
+{"task_id": "entry_34", "prompt": "module nand4 (\n    input a,\n    input b,\n    input c,\n    input d,\n    output y\n);\n"}
+{"task_id": "entry_35", "prompt": "module shift_register (\n  input clk,\n  input reset,\n  input load,\n  input [7:0] data_in,    // 8-bit parallel input for loading\n  output data_out         // serial output: MSB after shift\n);\n"}
+{"task_id": "entry_36", "prompt": "module simple_adder (\n    input [3:0] A,\n    input [3:0] B,\n    output reg [3:0] C\n);\n"}
+{"task_id": "entry_38", "prompt": "module greater_than_module (\n   input [3:0] a,\n   input [3:0] b,\n   output reg [3:0] x\n);\n"}
+{"task_id": "entry_39", "prompt": "module ab_mux (\n    input a,\n    input b,\n    output reg q\n);\n"}
+{"task_id": "entry_41", "prompt": "module simple_counter (\n    input  wire clk,\n    input  wire rst,\n    output reg [2:0] count\n);\n"}
+{"task_id": "entry_42", "prompt": "module sub (\n   input [15:0] in1,\n   input [15:0] in2,\n   output [31:0] out1,\n   output [31:0] out2\n   );\n"}
+{"task_id": "entry_43", "prompt": "module adder(\n    input [31:0] A,\n    input [31:0] B,\n    input [31:0] C,\n    input [31:0] D,\n    output [31:0] Y\n);\n"}
+{"task_id": "entry_44", "prompt": "module up_down_counter(\n    input clk,\n    input rst,\n    input load,\n    input up_down,\n    input [3:0] load_val,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_46", "prompt": "module multiplier (\n    input clk,\n    input [31:0] a,\n    input [31:0] b,\n    output [63:0] p\n);\n"}
+{"task_id": "entry_47", "prompt": "module adder_subtractor_4bit (\n    input [3:0] a,\n    input [3:0] b,\n    input sub,\n    output reg [3:0] sum\n);\n"}
+{"task_id": "entry_48", "prompt": "module half_adder(\n    input  wire A,\n    input  wire B,\n    output wire S,\n    output wire C\n);\n"}
+{"task_id": "entry_50", "prompt": "module my_module (\n    X ,\n    A1,\n    A2,\n    B1\n);\n"}
+{"task_id": "entry_51", "prompt": "module counter_4bit (\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_52", "prompt": "module adder_subtractor (\n    input clk,\n    input [3:0] A,\n    input [3:0] B,\n    input mode,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_53", "prompt": "module comparator(\n  input [3:0] A,\n  input [3:0] B,\n  output reg [3:0] Y\n);\n"}
+{"task_id": "entry_54", "prompt": "module four_to_one (\n    Y,\n    A1,\n    A2,\n    B1,\n    B2\n);\n"}
+{"task_id": "entry_55", "prompt": "module add_sub (\n    input [3:0] a,\n    input [3:0] b,\n    input mode,\n    output reg [3:0] result\n);\n"}
+{"task_id": "entry_56", "prompt": "module mux2to1 (\n    input  wire a,\n    input  wire b,\n    input  wire sel,\n    output wire out\n);\n"}
+{"task_id": "entry_57", "prompt": "module binary_counter(\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_58", "prompt": "module binary_counter (\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_59", "prompt": "module r_CC_STATUS(output reg [7:0] reg_0x1D, input wire reset, input wire wenb, input wire [7:0] in_data, input wire clk);\n"}
+{"task_id": "entry_60", "prompt": "module up_down_counter(\n  input clk,\n  input up_down,\n  input load,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_61", "prompt": "module shift_register_4bit (\n    input wire clk,\n    input wire [3:0] data_in,\n    input wire shift_dir,       // 0 = left, 1 = right\n    output reg [3:0] data_out\n);\n"}
+{"task_id": "entry_62", "prompt": "module signal_converter(input [3:0] input_signal, output [1:0] output_signal);\n"}
+{"task_id": "entry_63", "prompt": "module binary_to_gray(\n    input [3:0] binary,\n    output [3:0] gray\n);\n"}
+{"task_id": "entry_64", "prompt": "module counter (\n  input clk,\n  input enable,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_65", "prompt": "module comparator(input [2:0] A, input [2:0] B, output reg [1:0] result);\n"}
+{"task_id": "entry_67", "prompt": "module reverse_4bit (\n    input [3:0] in,\n    output [3:0] out\n);\n"}
+{"task_id": "entry_68", "prompt": "module d_ff_en(\n    input D,\n    input EN,\n    input CLK,\n    output reg Q\n);\n"}
+{"task_id": "entry_69", "prompt": "module and_gate (\n    input  A1,\n    input  A2,\n    input  A3,\n    input  A4,\n    output Y\n);\n"}
+{"task_id": "entry_70", "prompt": "module arithmetic_module #(parameter WIDTH=32)\n  (input [1:0] op,\n   input [WIDTH-1:0] a,\n   input [WIDTH-1:0] b,\n   output reg [WIDTH-1:0] out);\n"}
+{"task_id": "entry_71", "prompt": "module mux4_1(\n    input [3:0] A,\n    input [3:0] B,\n    input [3:0] C,\n    input [3:0] D,\n    input [1:0] S,\n    output reg [3:0] Y\n);\n"}
+{"task_id": "entry_72", "prompt": "module or4b_2 (\n    X   ,\n    A   ,\n    B   ,\n    C   ,\n    D   ,\n    VPWR,\n    VGND\n);\n"}
+{"task_id": "entry_73", "prompt": "module my_module (\n    X   ,\n    A1  ,\n    A2  ,\n    A3  ,\n    B1  ,\n    B2  ,\n    VPWR,\n    VGND,\n    VPB ,\n    VNB\n);\n"}
+{"task_id": "entry_74", "prompt": "module memory (\n    input [14:0] address,\n    input [15:0] data_in,\n    output reg [15:0] data_out,\n    input clock,\n    input write_en\n);\n"}
+{"task_id": "entry_75", "prompt": "module signExt (\n    input [15:0] inst,\n    output reg [31:0] data\n);\n"}
+{"task_id": "entry_77", "prompt": "module shift_register_4bit (\n    input wire [3:0] A,      // Parallel data input\n    input wire LOAD,         // Load control input\n    input wire CLK,          // Clock input\n    output reg [3:0] Q       // Register output\n);\n"}
+{"task_id": "entry_78", "prompt": "module dff_4 (\n  input clk,\n  input reset,\n  input [3:0] d,\n  output [3:0] q\n);\n"}
+{"task_id": "entry_79", "prompt": "module priority_encoder_4bit (\n    input  wire [3:0] in,      // 4 input bits\n    output wire [1:0] out      // 2-bit output representing highest priority\n);\n"}
+{"task_id": "entry_81", "prompt": "module sum2bits (\n    input [3:0] in,\n    output reg [1:0] out\n);\n"}
+{"task_id": "entry_82", "prompt": "module little_endian(\n    input [3:0] data_in,\n    output reg [1:0] data_out\n);\n"}
+{"task_id": "entry_83", "prompt": "module my_module(\n    input in1,\n    input in2,\n    input in3,\n    input in4,\n    input in5,\n    output out1\n);\n"}
+{"task_id": "entry_84", "prompt": "module dff_sync_rst (\n    input clk,\n    input rst,\n    input d,\n    output reg q\n);\n"}
+{"task_id": "entry_85", "prompt": "module comparator (\n    input [1:0] A,\n    input [1:0] B,\n    output reg [1:0] out\n);\n"}
+{"task_id": "entry_86", "prompt": "module td_mode_generator (\n  input [8:0] ctrl,\n  output reg [3:0] td_mode\n);\n"}
+{"task_id": "entry_87", "prompt": "module my_module(\n    input        a,\n    input        b,\n    input  [1:0] c,\n    input  [1:0] d,\n    output [2:0] out\n);\n"}
+{"task_id": "entry_88", "prompt": "module counter (\n  input clk,\n  input reset,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_89", "prompt": "module mux2 (\n    X ,\n    A0,\n    A1,\n    S\n);\n"}
+{"task_id": "entry_90", "prompt": "module data_gen (\n  input clk,\n  input rst,\n  input en,\n  output reg [35:0] tr_data\n);\n"}
+{"task_id": "entry_92", "prompt": "module mux_2to1 (\n    A,\n    B,\n    S,\n    Y\n);\n"}
+{"task_id": "entry_93", "prompt": "module ripple_carry_adder_4bit (\n    input  [3:0] A,\n    input  [3:0] B,\n    input        CIN,\n    output [3:0] SUM,\n    output       COUT\n);\n"}
+{"task_id": "entry_94", "prompt": "module mux_2_1 (\n    A   ,\n    B   ,\n    SEL ,\n    OUT\n);\n"}
+{"task_id": "entry_97", "prompt": "module mux2to1_3bit_to_1bit (\n    input  [2:0] A,\n    input  [2:0] B,\n    input        S,\n    output       Y\n);\n"}
+{"task_id": "entry_98", "prompt": "module up_down_counter (\n    input clk,\n    input reset,\n    input up,\n    output reg [2:0] count\n);\n"}
+{"task_id": "entry_100", "prompt": "module and4b (\n    input  A_N ,\n    input  B   ,\n    input  C   ,\n    input  D   ,\n    output X   ,\n    input  VPB ,\n    input  VPWR,\n    input  VGND,\n    input  VNB\n);\n"}
+{"task_id": "entry_101", "prompt": "module mux_4to1 (\n  input [1:0] sel,\n  input [3:0] data,\n  output reg out\n);\n"}
+{"task_id": "entry_102", "prompt": "module logic_circuit (\n    input A1,\n    input A2,\n    input B1,\n    input C1,\n    input D1,\n    output X\n);\n"}
+{"task_id": "entry_103", "prompt": "module and3(\n    X,\n    A,\n    B,\n    C\n);\n"}
+{"task_id": "entry_104", "prompt": "module dff_rst_set (\n    input clk,\n    input rst,\n    input set,\n    input d,\n    output reg q,\n    output qn\n);\n"}
+{"task_id": "entry_105", "prompt": "module mux_2to1(\n    input a,\n    input b,\n    input sel_b1,\n    output reg out_mux\n);\n"}
+{"task_id": "entry_106", "prompt": "module magnitude_comparator (\n    input [3:0] A,\n    input [3:0] B,\n    output reg EQ,\n    output reg GT,\n    output reg LT\n);\n"}
+{"task_id": "entry_107", "prompt": "module mux4\n(\n    input clk,\n    input reset,\n    input [1:0] select,\n    input [3:0] sig_in,\n    output reg sig_out\n);\n"}
+{"task_id": "entry_108", "prompt": "module comparator (\n    input [3:0] in0,\n    input [3:0] in1,\n    output reg eq,\n    output reg gt,\n    output reg lt\n);\n"}
+{"task_id": "entry_110", "prompt": "module mux_2_to_1 (\n    Y,\n    A,\n    B,\n    S\n);\n"}
+{"task_id": "entry_111", "prompt": "module d_ff_ar (\n  input clk,\n  input ar,\n  input D,\n  output reg Q\n);\n"}
+{"task_id": "entry_112", "prompt": "module TFFSR (D, S, R, CLK, Q, QN);\n"}
+{"task_id": "entry_113", "prompt": "module five_to_one (\n    input A1,\n    input A2,\n    input B1,\n    input C1,\n    input D1,\n    output Y\n);\n"}
+{"task_id": "entry_114", "prompt": "module twos_complement(\n    input [3:0] num,\n    output reg [3:0] twos_comp\n);\n"}
+{"task_id": "entry_115", "prompt": "module AND4(\n  input [3:0] A,\n  input [3:0] B,\n  output [3:0] Z\n);\n"}
+{"task_id": "entry_116", "prompt": "module comb_circuit (\n  input a,\n  input b,\n  input c,\n  input d,\n  output reg f\n);\n"}
+{"task_id": "entry_118", "prompt": "module modulo_operator (\n  input [31:0] dividend,\n  input [31:0] divisor,\n  output reg [31:0] remainder\n);\n"}
+{"task_id": "entry_119", "prompt": "module shift_register(clk, shift, in, out);\n"}
+{"task_id": "entry_120", "prompt": "module bitwise_or(\n    input [7:0] a,\n    input [7:0] b,\n    output [7:0] c\n);\n"}
+{"task_id": "entry_121", "prompt": "module Comparator(\n    input [3:0] A,\n    input [3:0] B,\n    output reg [2:0] O\n);\n"}
+{"task_id": "entry_122", "prompt": "module and8 (\n    input [7:0] a,\n    input [7:0] b,\n    input clk,\n    output reg [7:0] result\n);\n"}
+{"task_id": "entry_123", "prompt": "module comparator_4bit (\n  input [3:0] A,\n  input [3:0] B,\n  output reg [1:0] result\n);\n"}
+{"task_id": "entry_124", "prompt": "module calculator (\n    input  [3:0] A,\n    input  [3:0] B,\n    input        ctrl,\n    output [3:0] sum,\n    output [3:0] difference\n);\n"}
+{"task_id": "entry_125", "prompt": "module shift_register(\n    input wire in,\n    output reg out0,\n    output reg out1,\n    output reg out2,\n    output reg out3,\n    output reg [15:0] out\n);\n"}
+{"task_id": "entry_126", "prompt": "module fourBitAdder(input [3:0] in, output reg [1:0] out);\n"}
+{"task_id": "entry_127", "prompt": "module binary_counter(\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_128", "prompt": "module value_converter(\n  input [3:0] input_val,\n  output reg [2:0] output_val\n);\n"}
+{"task_id": "entry_129", "prompt": "module adder_subtractor(\n  input [3:0] A,\n  input [3:0] B,\n  input SUB,\n  output reg [3:0] out\n);\n"}
+{"task_id": "entry_130", "prompt": "module XOR_GATE (\n    input  wire IN1,\n    output wire OUT1\n);\n"}
+{"task_id": "entry_132", "prompt": "module my_module (\n    input  wire A,\n    input  wire TE,\n    input  wire VPWR,\n    input  wire VGND,\n    output wire Z\n);\n"}
+{"task_id": "entry_133", "prompt": "module ripple_carry_adder_8bit (\n    input wire clk,\n    input wire rst,\n    input wire [7:0] a,\n    input wire [7:0] b,\n    output reg [7:0] sum\n);\n"}
+{"task_id": "entry_134", "prompt": "module alu_2bit (\n    input [1:0] A,\n    input [1:0] B,\n    input [1:0] C,\n    output reg [1:0] out\n);\n"}
+{"task_id": "entry_135", "prompt": "module add_subtract(\n    input [7:0] A,\n    input [7:0] B,\n    input C,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_136", "prompt": "module adder (\n    input [7:0] in1,\n    input [7:0] in2,\n    output [7:0] out\n);\n"}
+{"task_id": "entry_137", "prompt": "module four_to_one_mux #(\n    parameter WIDTH = 4\n)(\n    input [WIDTH-1:0] in0,\n    input [WIDTH-1:0] in1,\n    input [WIDTH-1:0] in2,\n    input [WIDTH-1:0] in3,\n    input [1:0] sel,\n    output reg [WIDTH-1:0] out\n);\n"}
+{"task_id": "entry_138", "prompt": "module binary_to_gray (\n    input [3:0] B,\n    output [3:0] G\n);\n"}
+{"task_id": "entry_139", "prompt": "module shift_register_4bit (\n    input        clk,      // Clock signal\n    input        rst,      // Synchronous reset (active high)\n    input  [3:0] D,        // 4-bit parallel data input\n    input        LD,       // Load control signal (active high)\n    input        SH,       // Shift control signal (active high)\n    output reg [3:0] Q     // 4-bit register output\n);\n"}
+{"task_id": "entry_141", "prompt": "module addsub_4bit (\n    input [3:0] A,\n    input [3:0] B,\n    input subtract,\n    output reg [3:0] result\n);\n"}
+{"task_id": "entry_142", "prompt": "module binary_counter (\n    input clk,\n    input rst,\n    input ena,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_143", "prompt": "module counter_4bit_mod10 (\n    input wire clk,\n    input wire reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_144", "prompt": "module four_bit_adder (\n    input [3:0] a,\n    input [3:0] b,\n    input cin,\n    output [3:0] sum,\n    output cout\n);\n"}
+{"task_id": "entry_146", "prompt": "module gray_code(\n    input  [3:0] in,\n    output [3:0] out\n);\n"}
+{"task_id": "entry_149", "prompt": "module dff_async_reset (\n    input clk,\n    input rst,\n    input d,\n    output reg q,\n    output reg q_n\n);\n"}
+{"task_id": "entry_150", "prompt": "module my_module (\n    input A1,\n    input A2,\n    input B1_N,\n    output reg X\n);\n"}
+{"task_id": "entry_151", "prompt": "module data_processing(\n    input clk,\n    input [15:0] din,\n    input [3:0] ctrl,\n    output reg [15:0] dout\n);\n"}
+{"task_id": "entry_153", "prompt": "module binary_adder_subtractor (\n  input [3:0] A,\n  input [3:0] B,\n  input Sub,\n  output reg [3:0] Sum,\n  output reg Borrow\n);\n"}
+{"task_id": "entry_154", "prompt": "module usb_type_c_orientation(\n  input wire cc1,\n  input wire cc2,\n  output reg orientation\n);\n"}
+{"task_id": "entry_155", "prompt": "module sky130_fd_sc_hs__or4_4 (\n    X,\n    A,\n    B,\n    C,\n    D\n);\n"}
+{"task_id": "entry_156", "prompt": "module sky130_fd_sc_lp__inputiso0p (\n    X    ,\n    A    ,\n    SLEEP\n);\n"}
+{"task_id": "entry_157", "prompt": "module barrel_shifter(\n  input clk, rst,\n  input [3:0] data_in,\n  input [1:0] shift_amount,\n  output [3:0] data_out\n);\n"}
+{"task_id": "entry_158", "prompt": "module mux4 (\n    input [1:0] sel,\n    input [31:0] in1,\n    input [31:0] in2,\n    input [31:0] in3,\n    input [31:0] in4,\n    output reg [31:0] out\n);\n"}
+{"task_id": "entry_159", "prompt": "module arithmetic(\n    input [3:0] a,\n    input [3:0] b,\n    input [1:0] opcode,\n    output [3:0] result\n);\n"}
+{"task_id": "entry_160", "prompt": "module bitwise_and (\n    input [3:0] a,\n    input [3:0] b,\n    output reg [3:0] and_result\n);\n"}
+{"task_id": "entry_161", "prompt": "module synchronous_counter(\n    input clk,\n    input rst,\n    input en,\n    output reg [3:0] q\n);\n"}
+{"task_id": "entry_162", "prompt": "module binary_adder(\n  input  [7:0] a,\n  input  [7:0] b,\n  input        cin,\n  output [7:0] sum,\n  output       cout\n);\n"}
+{"task_id": "entry_163", "prompt": "module reg_ena_rst (\n  input clk,\n  input ena,\n  input d,\n  input rst,\n  output reg q\n);\n"}
+{"task_id": "entry_164", "prompt": "module dff_asynch_reset (\n  input D,\n  input RESET,\n  input CLK,\n  output reg Q\n);\n"}
+{"task_id": "entry_165", "prompt": "module counter (\n    input Clk,\n    input Reset,\n    input Enable,\n    output reg [3:0] Q\n);\n"}
+{"task_id": "entry_166", "prompt": "module add_sub (\n    input [3:0] A,\n    input [3:0] B,\n    input sub,\n    output reg [3:0] result\n);\n"}
+{"task_id": "entry_167", "prompt": "module add4bit(\n    input [3:0] A,\n    input [3:0] B,\n    input [3:0] C,\n    input [3:0] D,\n    output reg [4:0] sum\n);\n"}
+{"task_id": "entry_168", "prompt": "module add_with_enable (\n    input wire A,\n    input wire B,\n    input wire enable,\n    output reg C\n);\n"}
+{"task_id": "entry_169", "prompt": "module power_module (\n    input VPB,\n    input VPWR,\n    input VGND,\n    input VNB,\n    output reg HI,\n    output reg LO\n);\n"}
+{"task_id": "entry_170", "prompt": "module concat (\n  input [7:0] In0,\n  input [1:0] In1,\n  input clk,\n  output reg [9:0] dout\n);\n"}
+{"task_id": "entry_171", "prompt": "module comparator_4bit (\n  input [3:0] A,\n  input [3:0] B,\n  output reg [1:0] eq_gt\n);\n"}
+{"task_id": "entry_172", "prompt": "module counter (\n    input clk,\n    input rst,\n    input [31:0] max_value,\n    output reg [31:0] count\n);\n"}
+{"task_id": "entry_173", "prompt": "module Adder(\n    input [7:0] A,\n    input [7:0] B,\n    output [15:0] C\n);\n"}
+{"task_id": "entry_174", "prompt": "module calculator(\n    input [7:0] A,\n    input [7:0] B,\n    input OP,\n    input RESET,\n    output reg [7:0] OUT\n);\n"}
+{"task_id": "entry_176", "prompt": "module and4 (\n    input  a,\n    input  b,\n    input  c,\n    input  d,\n    output y\n);\n"}
+{"task_id": "entry_177", "prompt": "module counter_4bit_dff (\n    input wire clk,\n    input wire reset,         // Synchronous reset\n    input wire enable,        // Asynchronous enable\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_178", "prompt": "module add5_4bit (\n    input [3:0] A,\n    output [3:0] Y\n);\n"}
+{"task_id": "entry_179", "prompt": "module mux4to1 (\n    input in0,\n    input in1,\n    input in2,\n    input in3,\n    input [1:0] sel,\n    output reg out\n);\n"}
+{"task_id": "entry_180", "prompt": "module always_high (\n    output wire out\n);\n"}
+{"task_id": "entry_181", "prompt": "module sky130_fd_sc_ls__a221o (\n    X ,\n    A1,\n    A2,\n    B1,\n    B2,\n    C1\n);\n"}
+{"task_id": "entry_182", "prompt": "module twos_complement (\n  input [3:0] in,\n  output reg [3:0] out\n);\n"}
+{"task_id": "entry_183", "prompt": "module binary_to_gray (\n  input [3:0] binary,\n  output reg [3:0] gray\n);\n"}
+{"task_id": "entry_185", "prompt": "module output_mux (\n    X ,\n    A1,\n    A2,\n    B1,\n    C1\n);\n"}
+{"task_id": "entry_188", "prompt": "module clock_generator (\n    input  wire clk_in,    // 10 MHz input clock\n    output reg  clk_out    // 100 MHz output clock\n);\n"}
+{"task_id": "entry_189", "prompt": "module binary_counter(\n    input clk,\n    input rst,\n    output reg [7:0] count\n);\n"}
+{"task_id": "entry_190", "prompt": "module sky130_fd_sc_lp__a2bb2o (\n    X   ,\n    A1_N,\n    A2_N,\n    B1  ,\n    B2\n);\n"}
+{"task_id": "entry_191", "prompt": "module d_ff_rst (\n    input CLK,\n    input [3:0] D,\n    input RST,\n    output reg [3:0] Q\n);\n"}
+{"task_id": "entry_192", "prompt": "module dff_negedge_reset (\n    input D,\n    input C,\n    input R,\n    output reg Q\n);\n"}
+{"task_id": "entry_193", "prompt": "module binary_to_gray(\n    input  [3:0] binary_in,\n    output [3:0] gray_out\n);\n"}
+{"task_id": "entry_195", "prompt": "module custom_module (\n    output X,\n    input  A1,\n    input  A2,\n    input  [1:0] B1\n);\n"}
+{"task_id": "entry_196", "prompt": "module compare_4bit_inputs(\n  input [3:0] A,\n  input [3:0] B,\n  output reg [3:0] C\n);\n"}
+{"task_id": "entry_197", "prompt": "module comparator_3bit (\n  input [2:0] A,\n  input [2:0] B,\n  input [2:0] C,\n  output reg z\n);\n"}
+{"task_id": "entry_198", "prompt": "module adder_subtractor (\n    input  [3:0] A,\n    input  [3:0] B,\n    input  [3:0] C,\n    input  [3:0] D,\n    input        S,\n    output [3:0] Q\n);\n"}
+{"task_id": "entry_199", "prompt": "module dff_async_reset_set_enable(\n    input D,\n    input CLK,\n    input RESET,\n    input SET,\n    input EN,\n    output reg Q,\n    output reg QBAR\n);\n"}
+{"task_id": "entry_201", "prompt": "module register_adder(\n    input clk,\n    input rst,\n    input load,\n    input [1:0] D,\n    output reg [1:0] Q\n);\n"}
+{"task_id": "entry_202", "prompt": "module logic_circuit (\n    Y,\n    A1,\n    A2,\n    A3,\n    A4,\n    B1\n);\n"}
+{"task_id": "entry_203", "prompt": "module mux4x1 (\n    input [1:0] sel,\n    input [3:0] din,\n    output reg dout\n);\n"}
+{"task_id": "entry_204", "prompt": "module flip_flop (\n    input CLK,\n    input D,\n    input SET,\n    input CLR,\n    output reg Q\n);\n"}
+{"task_id": "entry_205", "prompt": "module sky130_fd_sc_ls__a2111o (\n    X ,\n    A1,\n    A2,\n    B1,\n    C1,\n    D1\n);\n"}
+{"task_id": "entry_206", "prompt": "module mux4to1 (\n    input A,\n    input B,\n    input C,\n    input D,\n    input S0,\n    input S1,\n    output Y\n);\n"}
+{"task_id": "entry_207", "prompt": "module binary_latch_with_reset(\n    input CLK,\n    input RST,\n    input D,\n    output reg Q\n);\n"}
+{"task_id": "entry_209", "prompt": "module and_gate_with_inverter (\n    output Y,      // Output of the logic\n    input  A1,     // AND gate input 1\n    input  A2,     // AND gate input 2\n    input  A3,     // AND gate input 3\n    input  B1,     // Input to be inverted\n    input  C1      // Control input (active HIGH disables output)\n);\n"}
+{"task_id": "entry_210", "prompt": "module calculator(\n    input wire [7:0] num1,\n    input wire [7:0] num2,\n    input wire [1:0] opcode,\n    output reg [7:0] result\n);\n"}
+{"task_id": "entry_211", "prompt": "module binary_to_gray (\n    input [3:0] A,\n    output [3:0] G\n);\n"}
+{"task_id": "entry_212", "prompt": "module two_to_one_mux(\n    input A1_N,\n    input A2_N,\n    input B1,\n    input B2,\n    output reg Y\n);\n"}
+{"task_id": "entry_213", "prompt": "module sky130_fd_sc_hd__o21ai_4 (\n    input  wire A1,\n    input  wire A2,\n    input  wire B1,\n    output wire Y,\n    input  wire VPWR,\n    input  wire VGND,\n    input  wire VPB,\n    input  wire VNB\n);\n"}
+{"task_id": "entry_215", "prompt": "module d_ff_asynchronous (\n    input  wire CLK,\n    input  wire D,\n    input  wire SCD, // Asynchronous clear\n    input  wire SCE, // Asynchronous set\n    output reg  Q,\n    output wire Q_N\n);\n"}
+{"task_id": "entry_216", "prompt": "module counter(\n    input clk,\n    input reset,\n    input load,\n    input [3:0] in,\n    output [3:0] out\n);\n"}
+{"task_id": "entry_218", "prompt": "module counter (\n    input clk,\n    input reset,\n    input enable,\n    output reg [7:0] count\n);\n"}
+{"task_id": "entry_219", "prompt": "module adder4 (\n    input  wire [3:0] A,\n    input  wire [3:0] B,\n    input  wire       enable,\n    output wire [3:0] sum,\n    output wire       overflow\n);\n"}
+{"task_id": "entry_220", "prompt": "module sky130_fd_sc_lp__iso0p (\n    X    ,\n    A    ,\n    SLEEP\n);\n"}
+{"task_id": "entry_221", "prompt": "module mux4to1(\n    input [3:0] in,\n    input [1:0] sel,\n    input clk,\n    input rst,\n    output reg out\n);\n"}
+{"task_id": "entry_222", "prompt": "module Multiplier (\n    input wire        CLK,\n    input wire        reset,\n    input wire        enable,\n    input wire [7:0]  input_num,\n    output reg [15:0] output_num\n);\n"}
+{"task_id": "entry_224", "prompt": "module three_to_one (\n    input  [1:0] A,\n    input  [1:0] B,\n    input  [1:0] C,\n    output [5:0] Y\n);\n"}
+{"task_id": "entry_225", "prompt": "module decoder_3to8(\n  input [2:0] input_bits,\n  output reg [7:0] output_bits\n);\n"}
+{"task_id": "entry_227", "prompt": "module mux2to1_case(\n  input in1,\n  input in2,\n  input sel,\n  output reg out\n);\n"}
+{"task_id": "entry_228", "prompt": "module decoder_3to8 (\n    input [2:0] in,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_231", "prompt": "module fifo_counter (\n  input empty,\n  input ge2_free,\n  input ge3_free,\n  input [1:0] input_tm_cnt,\n  output reg [4:0] fifo_cnt_inc\n);\n"}
+{"task_id": "entry_232", "prompt": "module adder (\n    input [3:0] A,\n    input [3:0] B,\n    input RESET_B,\n    input CLK,\n    output reg [3:0] SUM\n);\n"}
+{"task_id": "entry_233", "prompt": "module bus_driver(\n    input A,\n    output reg Z,\n    input TE_B,\n    input SLEEP\n);\n"}
+{"task_id": "entry_234", "prompt": "module multiplier (\n    input  wire [3:0] A,\n    input  wire [3:0] B,\n    output wire [7:0] result\n);\n"}
+{"task_id": "entry_235", "prompt": "module nor3_module (\n    input A,\n    input B,\n    input C_N,\n    output Y\n);\n"}
+{"task_id": "entry_236", "prompt": "module comparator_4bit (\n  input [3:0] A,\n  input [3:0] B,\n  output reg EQ\n);\n"}
+{"task_id": "entry_237", "prompt": "module add_sub(\n  input [3:0] A,\n  input [3:0] B,\n  input SUB,\n  output reg [3:0] RESULT\n);\n"}
+{"task_id": "entry_238", "prompt": "module mux_4to1_enable (\n  input [3:0] in,\n  input [1:0] sel,\n  input enable,\n  output reg out\n);\n"}
+{"task_id": "entry_239", "prompt": "module boolean_logic(\n    input [2:0] a,\n    input [2:0] b,\n    input [2:0] c,\n    output and1,\n    output and2,\n    output and3,\n    output or1,\n    output or2,\n    output or3,\n    output not1,\n    output not2,\n    output true_val,\n    output false_val\n);\n"}
+{"task_id": "entry_242", "prompt": "module mux_4x1 (\n  input [7:0] in0,\n  input [7:0] in1,\n  input [7:0] in2,\n  input [7:0] in3,\n  input sel0,\n  input sel1,\n  output reg [7:0] out\n);\n"}
+{"task_id": "entry_243", "prompt": "module barrel_shifter_4bit (\n    input  [3:0] d,       // 4-bit data input\n    input  [1:0] shift,   // 2-bit shift amount\n    output [3:0] q        // 4-bit shifted output\n);\n"}
+{"task_id": "entry_244", "prompt": "module my_module(\n    input a,\n    input b,\n    input c,\n    input d,\n    input e,\n    input f,\n    input g,\n    input h,\n    output out\n);\n"}
+{"task_id": "entry_245", "prompt": "module button_counter (\n   input  wire        BTN,\n   output reg  [3:0]  COUNT\n);\n"}
+{"task_id": "entry_246", "prompt": "module sky130_fd_sc_lp__a41oi_0 (\n    Y ,\n    A1,\n    A2,\n    A3,\n    A4,\n    B1\n);\n"}
+{"task_id": "entry_247", "prompt": "module multi_input_output (\n    input A,\n    input B,\n    input C,\n    input D,\n    input E,\n    input F,\n    input G,\n    input H,\n    output Y\n);\n"}
+{"task_id": "entry_248", "prompt": "module and3_not_A (\n    A,\n    B,\n    C,\n    X\n);\n"}
+{"task_id": "entry_249", "prompt": "module logic_function(\n  input A,\n  input B,\n  input C,\n  output Y1,\n  output Y2,\n  output Y3\n);\n"}
+{"task_id": "entry_250", "prompt": "module counter(\n    input        clk,        // 50 MHz clock\n    input        rst,        // Active high synchronous reset\n    input  [15:0] max_val,   // Maximum value to count to\n    output [15:0] count      // Current count output\n);\n"}
+{"task_id": "entry_251", "prompt": "module TLATNTSCAX2TS (\n    input  wire E,    // Enable\n    input  wire SE,   // Transparent Enable\n    input  wire CK,   // Clock\n    output wire ECK   // Gated Clock\n);\n"}
+{"task_id": "entry_252", "prompt": "module adder_subtractor_4bit (\n    input  [3:0] A,\n    input  [3:0] B,\n    input        mode,  // 0: add, 1: subtract\n    output [3:0] O,\n    output       COUT\n);\n"}
+{"task_id": "entry_253", "prompt": "module seq_gen (\n   input clk,\n   output reg toggle\n);\n"}
+{"task_id": "entry_254", "prompt": "module decoder4to16 (\n    input  [3:0] sel,\n    output reg [15:0] out\n);\n"}
+{"task_id": "entry_255", "prompt": "module mux4to1 (\n    input A,\n    input B,\n    input C,\n    input D,\n    input S0,\n    input S1,\n    output Y\n);\n"}
+{"task_id": "entry_256", "prompt": "module mux2to1 (\n    input a,\n    input b,\n    input sel,\n    output reg y\n  );\n"}
+{"task_id": "entry_257", "prompt": "module Adder(\n    input [2:0] A,\n    input [2:0] B,\n    input CLK,\n    input RST,\n    output reg [2:0] Q\n);\n"}
+{"task_id": "entry_258", "prompt": "module single_port_ram (\n    input wire clk,\n    input wire we,\n    input wire [9:0] addr,\n    input wire [7:0] data,\n    output reg [7:0] q\n);\n"}
+{"task_id": "entry_259", "prompt": "module decoder2to4_active_low (\n    input  wire in0,\n    input  wire in1,\n    output wire [3:0] y\n);\n"}
+{"task_id": "entry_261", "prompt": "module single_dff_reset (\n  input clk,\n  input din,\n  output reg dout,\n  input reset_n\n);\n"}
+{"task_id": "entry_262", "prompt": "module binary_counter(\n    input clk, reset, enable,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_263", "prompt": "module comparator (\n    input [3:0] A,\n    input [3:0] B,\n    output reg EQ,\n    output reg GT,\n    output reg LT\n);\n"}
+{"task_id": "entry_264", "prompt": "module shift_register (\n    input clk,\n    input reset,\n    input load,\n    input [3:0] data_in,\n    output [3:0] data_out\n);\n"}
+{"task_id": "entry_265", "prompt": "module d_ff_sync_reset_set_ce (\n    input CLK,\n    input D,\n    input RESET,\n    input SET,\n    input CE,\n    output reg Q\n);\n"}
+{"task_id": "entry_266", "prompt": "module binary_counter (\n    input clk,\n    input reset,\n    input enable,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_267", "prompt": "module SimpleCalculator(\n    input [3:0] a,\n    input [3:0] b,\n    input op,\n    output [3:0] result\n);\n"}
+{"task_id": "entry_268", "prompt": "module binary_counter (\n    input clk,\n    input reset,\n    input load,\n    input [3:0] data_in,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_270", "prompt": "module dff_async_set_clr (\n    input  wire CLK,  // Clock input\n    input  wire D,    // Data input\n    input  wire SCD,  // Asynchronous clear (active high)\n    input  wire SCE,  // Asynchronous set (active high)\n    output reg  Q     // Flip-flop output\n);\n"}
+{"task_id": "entry_271", "prompt": "module dff_asr (\n  input clk,\n  input d,\n  input set,\n  input reset,\n  output reg q,\n  output reg q_n\n);\n"}
+{"task_id": "entry_272", "prompt": "module my_and2_1 (\n    input  A,\n    input  B,\n    output Y\n);\n"}
+{"task_id": "entry_273", "prompt": "module mul_add(\n  input clk,\n  input [7:0] a,\n  input [7:0] b,\n  input [7:0] c,\n  output reg [15:0] sum,\n  output reg [15:0] product\n);\n"}
+{"task_id": "entry_274", "prompt": "module fifo_wrptr_inc (\n  input ge2_free,\n  input ge3_free,\n  input [1:0] input_tm_cnt,\n  output reg [3:0] fifo_wrptr_inc\n);\n"}
+{"task_id": "entry_275", "prompt": "module shift_register (\n    input clk,\n    input reset,\n    input data_in,\n    input shift_in,\n    output reg [7:0] data_out\n);\n"}
+{"task_id": "entry_276", "prompt": "module counter (\n  input clock, reset, enable,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_277", "prompt": "module clock_gate (\n  input CLK,\n  input EN,\n  input TE,\n  output reg ENCLK\n);\n"}
+{"task_id": "entry_278", "prompt": "module add4bit (\n    input  [3:0] A,\n    input  [3:0] B,\n    output [4:0] SUM\n);\n"}
+{"task_id": "entry_279", "prompt": "module and_gate (\n    input  A,\n    input  B,\n    input  C,\n    input  D,\n    output Y\n);\n"}
+{"task_id": "entry_280", "prompt": "module Comparator (\n  input [n-1:0] in1,\n  input [n-1:0] in2,\n  output reg [1:0] out\n);\n"}
+{"task_id": "entry_281", "prompt": "module t_latch_async_reset (\n    input  wire D,    // Data input\n    input  wire G,    // Gate input\n    input  wire RN,   // Asynchronous reset (active low)\n    output reg  Q,    // Output\n    output wire QN    // Complement of output\n);\n"}
+{"task_id": "entry_282", "prompt": "module mux4to1(I, S, O);\n"}
+{"task_id": "entry_283", "prompt": "module and_gate_ctrl (\n    input  wire a,\n    input  wire b,\n    input  wire c,\n    input  wire d,\n    input  wire ctrl,\n    input  wire vdd,\n    input  wire gnd,\n    output wire out\n);\n"}
+{"task_id": "entry_284", "prompt": "module up_counter(\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_287", "prompt": "module combinational_circuit(\n    input  [1:0] A1A2,\n    input  [1:0] B1B2,\n    input  [1:0] C1C2,\n    output       Y\n);\n"}
+{"task_id": "entry_289", "prompt": "module mux3(input [2:0] a, input [2:0] b, input sel, output reg [2:0] out);\n"}
+{"task_id": "entry_290", "prompt": "module d_latch_en (\n    input D,\n    input EN,\n    output Q,\n    output Q_bar\n);\n"}
+{"task_id": "entry_293", "prompt": "module barrel_shifter (\n    input [3:0] data_in,\n    input [1:0] shift,\n    output reg [3:0] data_out\n);\n"}
+{"task_id": "entry_294", "prompt": "module multi_input_module(\n    input [3:0] input1,\n    input [4:0] input2,\n    input [5:0] input3,\n    input [6:0] input4,\n    input [7:0] input5,\n    output reg [15:0] output1\n);\n"}
+{"task_id": "entry_295", "prompt": "module priority_encoder_4bit (\n    input  wire [3:0] in,     // 4-bit input\n    output reg  [1:0] out,    // 2-bit binary output\n    output reg        valid   // High if any input bit is 1\n);\n"}
+{"task_id": "entry_296", "prompt": "module max_8bit (\n    input [7:0] A,\n    input [7:0] B,\n    output reg [7:0] max_val\n);\n"}
+{"task_id": "entry_297", "prompt": "module sync_register(\n    input clk,\n    input rst,\n    input [3:0] data_in,\n    output [3:0] data_out\n    );\n"}
+{"task_id": "entry_298", "prompt": "module zbroji (\n    input [31:0] a,\n    input [31:0] b,\n    output [31:0] sum\n);\n"}
+{"task_id": "entry_299", "prompt": "module counter(\n    input clk,\n    input rst,\n    input en,\n    input ctrl,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_300", "prompt": "module calculator (\n  input signed [15:0] a,\n  input signed [15:0] b,\n  input [1:0] op,\n  output reg signed [15:0] result\n);\n"}
+{"task_id": "entry_301", "prompt": "module msb_module (\n   input [15:0] data_in,\n   output reg [3:0] data_out\n   );\n"}
+{"task_id": "entry_302", "prompt": "module ten_to_one(\n  input A1,\n  input A2,\n  input A3,\n  input B1,\n  input B2,\n  input C1,\n  input C2,\n  input D1,\n  input D2,\n  input D3,\n  output X\n);\n"}
+{"task_id": "entry_303", "prompt": "module sky130_fd_sc_hdll__a32oi (\n    Y ,\n    A1,\n    A2,\n    A3,\n    B1,\n    B2\n);\n"}
+{"task_id": "entry_304", "prompt": "module bin2gray (\n    input  [3:0] B,\n    output [3:0] G\n);\n"}
+{"task_id": "entry_305", "prompt": "module d_ff_en_clk_gate (\n  input CLK,\n  input EN,\n  input TE,\n  output reg ENCLK\n);\n"}
+{"task_id": "entry_306", "prompt": "module memory_generator\n  (\n    input clk,\n    input ena,\n    input [11:0] addr,\n    input [7:0] din,\n    input we,\n    output reg [7:0] dout\n  );\n"}
+{"task_id": "entry_307", "prompt": "module decoder3to8 (\n    input  [2:0] in,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_308", "prompt": "module and8 (\n   input clk,\n   input [7:0] a,\n   input [7:0] b,\n   output reg [7:0] out\n            );\n"}
+{"task_id": "entry_309", "prompt": "module multiplier(\n    input [7:0] a,\n    input [7:0] b,\n    output reg [15:0] c\n);\n"}
+{"task_id": "entry_311", "prompt": "module binary_counter (\n    input wire clk,\n    input wire reset,\n    output reg [2:0] count\n);\n"}
+{"task_id": "entry_312", "prompt": "module comparator_4bit (\n  input [3:0] in1,\n  input [3:0] in2,\n  output reg [1:0] out\n);\n"}
+{"task_id": "entry_314", "prompt": "module decoder_3to8 (\n    input [2:0] in,\n    input ena,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_315", "prompt": "module counter (\n    input clk,\n    input rst,\n    input load,\n    input [3:0] data_in,\n    output reg [3:0] count_out\n);\n"}
+{"task_id": "entry_316", "prompt": "module shift_reg (\n    input [3:0] data_in,\n    input load,\n    input clk,\n    output reg [3:0] q\n);\n"}
+{"task_id": "entry_319", "prompt": "module Counter(\n   input         clk, reset, enable, load,\n   input  [3:0]  data_in,\n   output [3:0]  data_out);\n"}
+{"task_id": "entry_320", "prompt": "module sky130_fd_sc_lp__decap (\n    input clk,\n    input rst,\n    input [15:0] in_data,\n    output [15:0] out_data\n);\n"}
+{"task_id": "entry_321", "prompt": "module synchronizer_ff (\n    input  wire [3:0] D,\n    input  wire       CLK,\n    input  wire       AR,\n    output reg  [3:0] Q\n);\n"}
+{"task_id": "entry_322", "prompt": "module counter (\n    input wire clk,\n    input wire reset,\n    input wire enable,\n    output reg [15:0] count\n);\n"}
+{"task_id": "entry_323", "prompt": "module dff_async_set(\n    input  wire D,\n    input  wire S,\n    input  wire clk,\n    output reg  Q\n);\n"}
+{"task_id": "entry_324", "prompt": "module BCD_to_Binary (\n    input  [3:0] bcd,\n    output reg [7:0] bin\n);\n"}
+{"task_id": "entry_326", "prompt": "module delay_line #(\n    parameter delay = 4 // Number of clock cycles to delay the signal\n)(\n    input  wire clk,     // Clock signal\n    input  wire rst,     // Reset signal (active high)\n    input  wire in,      // Input signal to delay\n    output wire out      // Delayed output signal\n);\n"}
+{"task_id": "entry_327", "prompt": "module barrel_shifter_4bit (\n    input  [3:0] A,      // 4-bit data input\n    input  [1:0] B,      // 2-bit shift amount input\n    output reg [3:0] Y   // 4-bit shifted output\n);\n"}
+{"task_id": "entry_328", "prompt": "module decoder_3to8 (\n  input [2:0] a,\n  output reg [7:0] out\n);\n"}
+{"task_id": "entry_329", "prompt": "module simple_counter(\n  input clk,\n  input rst,\n  input en,\n  output reg [7:0] count\n);\n"}
+{"task_id": "entry_331", "prompt": "module division (\n    input [3:0] dividend,\n    input [3:0] divisor,\n    output reg [3:0] quotient,\n    output reg [3:0] remainder\n);\n"}
+{"task_id": "entry_332", "prompt": "module adder_4bit(\n    input  [3:0] a,\n    input  [3:0] b,\n    input        cin,\n    output [3:0] sum,\n    output       cout\n);\n"}
+{"task_id": "entry_333", "prompt": "module jump_mux (\n    input [31:0] jump_address,\n    input [31:0] from_mux_branch,\n    input jump,\n    output reg [31:0] to_pc\n);\n"}
+{"task_id": "entry_334", "prompt": "module binary_counter (\n  input clk,\n  input rst,\n  input up_down,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_335", "prompt": "module counter_4bit (\n  input clk,\n  input reset,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_336", "prompt": "module clk_delay #(\n    parameter MAX_DELAY_NS = 10\n) (\n    input  wire clk_in,\n    output wire clk_out,\n    input  wire [3:0] delay   // Delay in nanoseconds: 0-10\n);\n"}
+{"task_id": "entry_337", "prompt": "module neg_delayed (\n    input  wire clk,       // System clock\n    input  wire rst,       // Global reset signal (active high)\n    input  wire en,        // Global enable signal (active high)\n    input  wire in,        // Input signal\n    output reg  out        // Output signal\n);\n"}
+{"task_id": "entry_338", "prompt": "module logic_unit (\n    input a,\n    input b,\n    input c,\n    output x\n);\n"}
+{"task_id": "entry_339", "prompt": "module concatenation_module (\n    input [7:0] i1,\n    input [15:0] i0,\n    output [23:0] o\n);\n"}
+{"task_id": "entry_341", "prompt": "module shift_register_4bit (\n    input clk,\n    input reset,\n    input shift_in,\n    input shift,           // 1 = shift right, 0 = shift left\n    output reg shift_out,\n    output reg [3:0] q\n);\n"}
+{"task_id": "entry_345", "prompt": "module mux_2to1_enable (\n  input a,\n  input b,\n  input enable,\n  output reg mux_out\n);\n"}
+{"task_id": "entry_346", "prompt": "module add_const(input wire[3:0] in_val, input wire[3:0] const_val, output reg[3:0] out_val);\n"}
+{"task_id": "entry_347", "prompt": "module pin_control (\n    input        clk,\n    input        reset,\n    input  [17:0] data,\n    output reg [17:0] out_data\n);\n"}
+{"task_id": "entry_348", "prompt": "module sky130_fd_sc_hd__mux2_1 (\n    output Z,\n    input  A,\n    input  B,\n    input  S\n);\n"}
+{"task_id": "entry_349", "prompt": "module flip_flop (\n    input CLK,\n    input D,\n    input SET_B,\n    input CLR_B,\n    output reg Q,\n    output reg Q_N\n);\n"}
+{"task_id": "entry_350", "prompt": "module shift_register_4bit (\n    input wire [3:0] data_in,\n    input wire load,\n    input wire clk,\n    output reg [3:0] data_out\n);\n"}
+{"task_id": "entry_353", "prompt": "module gated_d_latch (\n    input wire d,\n    input wire clk,\n    input wire en,\n    output reg q\n);\n"}
+{"task_id": "entry_354", "prompt": "module logic_function (\n  input x,\n  input y,\n  input z,\n  output reg out1,\n  output reg out2\n);\n"}
+{"task_id": "entry_355", "prompt": "module register_4bit (\n    input clk,\n    input rst,\n    input ld,\n    input [3:0] d,\n    input si,\n    output so,\n    output reg [3:0] q\n);\n"}
+{"task_id": "entry_356", "prompt": "module and_gate (\n    Y ,\n    A1,\n    A2,\n    B1,\n    B2\n);\n"}
+{"task_id": "entry_357", "prompt": "module add8bit (\n    input  wire [7:0] A,\n    input  wire [7:0] B,\n    input  wire       EN,\n    input  wire       CLR,\n    output reg  [7:0] S,\n    output reg        COUT\n);\n"}
+{"task_id": "entry_358", "prompt": "module counter(input wire clk,\n               input wire rst,\n               input wire en,\n               output reg [3:0] count);\n"}
+{"task_id": "entry_359", "prompt": "module bitwise_and (\n    input clk,\n    input [31:0] A,\n    input [31:0] B,\n    output reg [31:0] Q\n);\n"}
+{"task_id": "entry_360", "prompt": "module add8bit(\n    input [7:0] A,\n    input [7:0] B,\n    output [7:0] sum\n);\n"}
+{"task_id": "entry_361", "prompt": "module calculator(\n    input  wire [7:0] A,\n    input  wire [7:0] B,\n    input  wire [1:0] op,\n    output wire [7:0] result\n);\n"}
+{"task_id": "entry_365", "prompt": "module mux_2to1 (\n    output reg out,\n    input in0,\n    input in1,\n    input sel\n);\n"}
+{"task_id": "entry_366", "prompt": "module counter (\n    input clk,\n    input reset,\n    output reg [3:0] count,\n    output reg overflow\n);\n"}
+{"task_id": "entry_367", "prompt": "module binary_counter(\n  input clk,\n  input rst,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_368", "prompt": "module logic_gate (\n    // inputs\n    input A1,\n    input A2,\n    input B1,\n\n    // output\n    output X\n);\n"}
+{"task_id": "entry_369", "prompt": "module MUX_2_TO_1\n(\n  input A,\n  input B,\n  input S,\n  output Z\n);\n"}
+{"task_id": "entry_370", "prompt": "module up_counter (\n    input clk,\n    input rst,\n    output reg [2:0] out,\n    output reg carry_out\n);\n"}
+{"task_id": "entry_371", "prompt": "module mux_4to2 (\n    input wire in0,\n    input wire in1,\n    input wire in2,\n    input wire in3,\n    input wire [1:0] sel,\n    output reg [1:0] out\n);\n"}
+{"task_id": "entry_373", "prompt": "module mux_8bit(\n    input [7:0] a,\n    input [7:0] b,\n    input sel,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_374", "prompt": "module barrel_shifter_4bit (\n    input      [3:0] A,\n    input      [1:0] B,\n    output reg [3:0] Y\n);\n"}
+{"task_id": "entry_377", "prompt": "module async_set_reset_ff (\n    input  wire D,         // Data input\n    input  wire RESET_B,   // Asynchronous reset (active low)\n    input  wire SET_B,     // Asynchronous set   (active low)\n    input  wire CLK,       // Clock input\n    output reg  Q,         // Output\n    output wire Q_B        // Complementary output\n);\n"}
+{"task_id": "entry_378", "prompt": "module shift_register_4bit (\n    input CLK,\n    input LOAD,\n    input CLR,\n    input [3:0] D,\n    output reg [3:0] Q,\n    output reg [3:0] Q_next\n);\n"}
+{"task_id": "entry_379", "prompt": "module d_ff_asr (\n    input D,\n    input S,\n    input R,\n    input CLK,\n    output Q\n);\n"}
+{"task_id": "entry_380", "prompt": "module barrel_shifter (\n    input  [3:0] data,\n    input  [1:0] shift_amount,\n    output reg [3:0] result\n);\n"}
+{"task_id": "entry_381", "prompt": "module myDFF (CK, D, RN, SN, Q, QN);\n"}
+{"task_id": "entry_382", "prompt": "module or4 (\n    input A,\n    input B,\n    input C,\n    input D,\n    output Y\n);\n"}
+{"task_id": "entry_383", "prompt": "module d_flip_flop (\n    input D,\n    input CLK,\n    input RESET,\n    output reg Q\n);\n"}
+{"task_id": "entry_384", "prompt": "module jk_flip_flop (\n  input J,\n  input K,\n  input clk,\n  output reg Q\n);\n"}
+{"task_id": "entry_386", "prompt": "module shift_register\n  ( input         clk\n  , input         load\n  , input  [3:0]  data_in\n  , output [3:0]  data_out\n  );\n"}
+{"task_id": "entry_387", "prompt": "module mux_2to1 (\n    A,\n    B,\n    SEL,\n    Y\n);\n"}
+{"task_id": "entry_388", "prompt": "module mux_4to1 (\n    input [7:0] A,\n    input [7:0] B,\n    input [7:0] C,\n    input [7:0] D,\n    input [1:0] S,\n    output [7:0] Y\n);\n"}
+{"task_id": "entry_389", "prompt": "module max_val_module(\n  input clk,\n  input [15:0] in,\n  output reg [15:0] max_val\n);\n"}
+{"task_id": "entry_390", "prompt": "module mux (\n    input [1:0] sel,\n    input [3:0] in,\n    output reg out\n);\n"}
+{"task_id": "entry_391", "prompt": "module priority_encoder (\n    input [1:0] data,\n    input clk,\n    output reg q\n);\n"}
+{"task_id": "entry_392", "prompt": "module and_or_buf (\n    input [2:0] A,\n    input B,\n    output X\n);\n"}
+{"task_id": "entry_393", "prompt": "module mux4to1(\n    input [3:0] in,\n    input [1:0] sel,\n    output reg out\n);\n"}
+{"task_id": "entry_394", "prompt": "module adder_subtractor (\n    input        clk,\n    input        clr,\n    input  [3:0] A,\n    input  [3:0] B,\n    input        sub,\n    output [3:0] Y\n);\n"}
+{"task_id": "entry_395", "prompt": "module binary_counter(\n    input clk,\n    input reset,\n    output reg [3:0] q\n    );\n"}
+{"task_id": "entry_396", "prompt": "module simple_register(\n    input               clk,        // main clock\n    input               rst,        // main reset\n    input       [7:0]   data_in,    // input data\n    input               enable,     // enable signal\n    output reg  [7:0]   data_out    // output data\n    );\n"}
+{"task_id": "entry_397", "prompt": "module RegisterAdd_4(\n    input CLK,\n    input reset,\n    input [3:0] in1,\n    input [3:0] in2,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_399", "prompt": "module Calculator(\n    input signed [15:0] A,\n    input signed [15:0] B,\n    input [1:0] Sel,\n    output reg signed [15:0] Result\n);\n"}
+{"task_id": "entry_401", "prompt": "module mux_2to1(\n    input in0,\n    input in1,\n    input sel,\n    output reg out\n);\n"}
+{"task_id": "entry_402", "prompt": "module sync_counter (\n    input clk_in,\n    input rstn,\n    output reg [3:0] count_out\n);\n"}
+{"task_id": "entry_404", "prompt": "module binary_counter (\n    input clk,\n    input rst,\n    input en,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_405", "prompt": "module shift_register (\n    input clk,\n    input load,\n    input [7:0] data_in,\n    output [7:0] data_out\n);\n"}
+{"task_id": "entry_406", "prompt": "module my_module (\n    Y   ,\n    A1  ,\n    A2  ,\n    A3  ,\n    B1  ,\n    VPWR,\n    VGND,\n    VPB ,\n    VNB\n);\n"}
+{"task_id": "entry_408", "prompt": "module barrel_shifter_4bit (\n    input  wire [3:0] data_in,\n    input  wire [2:0] ctrl,         // ctrl[2]: direction, ctrl[1:0]: shift amount\n    output reg  [3:0] data_out\n);\n"}
+{"task_id": "entry_409", "prompt": "module clk_select(\n    input  [3:0] inclk,\n    input  [1:0] clkselect,\n    output       outclk\n);\n"}
+{"task_id": "entry_410", "prompt": "module decoder3to8 (\n    input wire clk,\n    input wire A,\n    input wire B,\n    input wire C,\n    output reg [7:0] Y\n);\n"}
+{"task_id": "entry_412", "prompt": "module shift_left(\n   input [3:0] in,\n   output [3:0] out\n);\n"}
+{"task_id": "entry_413", "prompt": "module BinaryCounter (\n  input         clock, reset, \n  output [3:0]  count\n);\n"}
+{"task_id": "entry_414", "prompt": "module mux_2to1 (\n    input A,\n    input B,\n    input sel,\n    output out\n);\n"}
+{"task_id": "entry_415", "prompt": "module binary_counter (\n    input wire clk,\n    input wire rst,\n    input wire en,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_416", "prompt": "module shift_register (\n  input clk,\n  input load,\n  input [3:0] data,\n  output reg [3:0] q\n);\n"}
+{"task_id": "entry_417", "prompt": "module shift_register (\n    input clk,\n    input rst,\n    input load,\n    input [15:0] data_in,\n    input shift,\n    input enable,\n    output reg [15:0] data_out\n);\n"}
+{"task_id": "entry_418", "prompt": "module magnitude_comparator #(\n    parameter n = 8  // Default bit-width is 8\n)(\n    input  wire [n-1:0] num1,\n    input  wire [n-1:0] num2,\n    output reg  gt,    // num1 > num2\n    output reg  eq,    // num1 == num2\n    output reg  lt     // num1 < num2\n);\n"}
+{"task_id": "entry_419", "prompt": "module calculator (\n    input [15:0] a,\n    input [15:0] b,\n    input [3:0] op,\n    output reg [15:0] result\n);\n"}
+{"task_id": "entry_420", "prompt": "module tornado_epcs_flash_controller_0_atom (\n    // inputs:\n    dclkin,\n    oe,\n    scein,\n    sdoin,\n    // outputs:\n    data0out\n);\n"}
+{"task_id": "entry_421", "prompt": "module my_logic_gate (\n    X ,\n    A1,\n    A2,\n    B1,\n    C1\n);\n"}
+{"task_id": "entry_422", "prompt": "module mux4to1 (\n    // module ports\n    input [3:0] D,\n    input S0,\n    input S1,\n    output Y\n);\n"}
+{"task_id": "entry_424", "prompt": "module select3_8(\n    input [7:0] in1,\n    input [7:0] in2,\n    input [7:0] in3,\n    input [1:0] choose,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_425", "prompt": "module max3(\n  input [31:0] A,\n  input [31:0] B,\n  input [31:0] C,\n  output reg [31:0] X\n);\n"}
+{"task_id": "entry_427", "prompt": "module addsub_4bit (\n    input [3:0] A,\n    input [3:0] B,\n    input S,\n    output reg [3:0] F\n);\n"}
+{"task_id": "entry_428", "prompt": "module XOR_4bit(\n    input [3:0] A,\n    input [3:0] B,\n    output [3:0] Z\n);\n"}
+{"task_id": "entry_429", "prompt": "module barrel_shifter (\n    input clk,\n    input [15:0] A,\n    input [3:0] B,\n    input S,\n    output reg [15:0] P\n);\n"}
+{"task_id": "entry_431", "prompt": "module mux_2to1_enable (\n  input a,\n  input b,\n  input en,\n  output y\n);\n"}
+{"task_id": "entry_433", "prompt": "module shift_register (\n    input clk,\n    input load,\n    input [3:0] in,\n    output [3:0] out\n);\n"}
+{"task_id": "entry_434", "prompt": "module and_logic(\n    input [3:0] A,\n    input [3:0] B,\n    input reset,\n    output reg [3:0] C\n);\n"}
+{"task_id": "entry_435", "prompt": "module add_sub (\n    input [3:0] A, B,\n    input MODE,\n    output [3:0] S\n);\n"}
+{"task_id": "entry_436", "prompt": "module shift_register (\n    input clk,\n    input load,\n    input shift_enable,\n    input [3:0] data_in,\n    output [3:0] data_out\n);\n"}
+{"task_id": "entry_437", "prompt": "module sync_counter(\n    input clk,\n    input rst,\n    output reg [2:0] count_out\n);\n"}
+{"task_id": "entry_438", "prompt": "module my_inverter (\n    input  A   ,\n    output Z   ,\n    input  TE  ,\n    input  VPB ,\n    input  VPWR,\n    input  VGND,\n    input  VNB\n);\n"}
+{"task_id": "entry_439", "prompt": "module binary_to_gray (\n    input  [3:0] A,   // 4-bit binary input\n    output [3:0] G    // 4-bit Gray code output\n);\n"}
+{"task_id": "entry_440", "prompt": "module counter (\n    clk,\n    rst,\n    en,\n    count\n);\n"}
+{"task_id": "entry_441", "prompt": "module up_counter(\n  input clk,\n  input rst,\n  output reg [3:0] out\n);\n"}
+{"task_id": "entry_442", "prompt": "module ripple_carry_adder_4bit (\n    input  [3:0] A,\n    input  [3:0] B,\n    input        CIN,\n    output [3:0] S,\n    output       COUT\n);\n"}
+{"task_id": "entry_443", "prompt": "module adder_subtractor (\n  input [3:0] A,\n  input [3:0] B,\n  input opcode,\n  output reg [3:0] sum\n);\n"}
+{"task_id": "entry_445", "prompt": "module xor4(\n    input [3:0] A,\n    input [3:0] B,\n    output [3:0] X\n);\n"}
+{"task_id": "entry_446", "prompt": "module adder(\n    input [3:0] A,\n    input [3:0] B,\n    output [3:0] C\n);\n"}
+{"task_id": "entry_447", "prompt": "module counter (\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_448", "prompt": "module arithmetic_module (\n    input  wire [7:0] A,\n    input  wire [7:0] B,\n    input  wire       operation,\n    input  wire       reset,\n    output reg  [7:0] C\n);\n"}
+{"task_id": "entry_449", "prompt": "module up_counter_3bit (\n    input wire clk,\n    input wire rst,\n    output reg [2:0] count\n);\n"}
+{"task_id": "entry_450", "prompt": "module binary_counter (\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_452", "prompt": "module my_module (\n    input a,\n    input b,\n    input c,\n    input d,\n    input e,\n    output f\n);\n"}
+{"task_id": "entry_453", "prompt": "module simple_calculator(\n    input [7:0] a,\n    input [7:0] b,\n    output [7:0] sum,\n    output [7:0] difference,\n    output [7:0] product,\n    output [7:0] quotient\n    );\n"}
+{"task_id": "entry_454", "prompt": "module accumulator (\n  input clk,\n  input reset,\n  input [7:0] in,\n  output [15:0] out\n);\n"}
+{"task_id": "entry_455", "prompt": "module mux (\n    input [3:0] IN,\n    input [1:0] SEL,\n    input EN,\n    output reg out\n);\n"}
+{"task_id": "entry_456", "prompt": "module AND_GATE (\n  input a,\n  input b,\n  output y\n);\n"}
+{"task_id": "entry_457", "prompt": "module my_module (\n    input  wire A1,\n    input  wire A2,\n    input  wire B1,\n    input  wire C1,\n    output wire Y,\n    input  wire VPWR,\n    input  wire VGND,\n    input  wire VPB,\n    input  wire VNB\n);\n"}
+{"task_id": "entry_458", "prompt": "module data_manipulation (\n  input [3:0] in_data,\n  input [1:0] ctrl,\n  output reg [3:0] out_data\n);\n"}
+{"task_id": "entry_459", "prompt": "module arithmetic_op(output reg [3:0] Y, input [3:0] A, input [3:0] B, input S);\n"}
+{"task_id": "entry_460", "prompt": "module mux4to1_sync_reset (\n    input  wire [3:0] in0,\n    input  wire [3:0] in1,\n    input  wire [3:0] in2,\n    input  wire [3:0] in3,\n    input  wire [1:0] sel,\n    input  wire       clk,\n    input  wire       reset,\n    output reg  [3:0] out  // out MUST be declared as reg for assignment in always block\n);\n"}
+{"task_id": "entry_461", "prompt": "module bin2gray_4bit (\n    input  [3:0] in,\n    output [3:0] out\n);\n"}
+{"task_id": "entry_462", "prompt": "module five_input_one_output (\n    input  A1,\n    input  A2,\n    input  B1,\n    input  C1,\n    input  D1,\n    output Y\n);\n"}
+{"task_id": "entry_464", "prompt": "module counter (\n  input clk,\n  input rst,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_465", "prompt": "module comparator_4bit (\n  input [3:0] A,\n  input [3:0] B,\n  output reg [1:0] COMP\n);\n"}
+{"task_id": "entry_467", "prompt": "module clock_gate_d_ff (\n    input clk,\n    input en,\n    input en_ff,\n    input [31:0] data,\n    output reg q\n);\n"}
+{"task_id": "entry_468", "prompt": "module sky130_fd_sc_ms__a221oi (\n    Y   ,\n    A1  ,\n    A2  ,\n    B1  ,\n    B2  ,\n    C1  ,\n    VPWR,\n    VGND,\n    VPB ,\n    VNB\n);\n"}
+{"task_id": "entry_469", "prompt": "module parity_check (\n  input [7:0] data,\n  output reg parity_bit\n);\n"}
+{"task_id": "entry_470", "prompt": "module shift_register_4bit (\n    input wire clk,\n    input wire rst,\n    input wire load,\n    input wire a,\n    input wire b,\n    input wire c,\n    input wire d,\n    output reg [3:0] q\n);\n"}
+{"task_id": "entry_472", "prompt": "module BLOCK1A ( PIN2, GIN1, GIN2, PHI, GOUT );\n"}
+{"task_id": "entry_473", "prompt": "module mux4to1_enable (\n    input [3:0] in,\n    input [1:0] sel,\n    input en,\n    output out\n);\n"}
+{"task_id": "entry_474", "prompt": "module hw2_B (\n    input in,\n    input clk,\n    input rst_n,\n    output reg out\n    );\n"}
+{"task_id": "entry_475", "prompt": "module max_selector (\n  input clk,\n  input [4:0] a,\n  input [4:0] b,\n  input [4:0] c,\n  output reg [1:0] out\n);\n"}
+{"task_id": "entry_476", "prompt": "module mux4to1_enable (\n    input  wire [3:0] data_in,\n    input  wire [1:0] select,\n    input  wire       enable,\n    output reg  [3:0] data_out\n);\n"}
+{"task_id": "entry_477", "prompt": "module or3 (\n    input  A   ,\n    input  B   ,\n    input  C   ,\n    output X   ,\n    input  VPB ,\n    input  VPWR,\n    input  VGND,\n    input  VNB\n);\n"}
+{"task_id": "entry_478", "prompt": "module fifo_cnt_inc (\n  input [1:0] input_tm_cnt,\n  input empty,\n  input ge2_free,\n  input ge3_free,\n  output reg [4:0] fifo_cnt_inc\n);\n"}
+{"task_id": "entry_479", "prompt": "module logic_gate (\n    input  A1,\n    input  A2,\n    input  B1,\n    input  C1,\n    input  D1,\n    output X\n);\n"}
+{"task_id": "entry_480", "prompt": "module shift_register (\n    input clk,\n    input parallel_load,\n    input serial_in,\n    output serial_out,\n    input [3:0] data_in\n);\n"}
+{"task_id": "entry_481", "prompt": "module bitwise_op (\n  input [3:0] a,\n  input [3:0] b,\n  input [1:0] ctrl,\n  output reg [3:0] out\n);\n"}
+{"task_id": "entry_482", "prompt": "module and5 (\n    input A1,\n    input A2,\n    input A3,\n    input A4,\n    input B1,\n    output X\n);\n"}
+{"task_id": "entry_484", "prompt": "module mux_2_1 (\n    Y,\n    A,\n    B,\n    S\n);\n"}
+{"task_id": "entry_485", "prompt": "module signal_combiner(\n    input signal_a,\n    input signal_b,\n    input signal_c,\n    input signal_d,\n    input signal_e,\n    input clk,\n    output combined_signal\n);\n"}
+{"task_id": "entry_486", "prompt": "module pwmregister(\n  output reg [7:0] pwmval,\n  input clk,\n  input pwmldce,\n  input [7:0] wrtdata);\n"}
+{"task_id": "entry_487", "prompt": "module sum_module (\n    input clk,\n    input reset,\n    input [3:0] data_in,\n    output reg [1:0] data_out\n);\n"}
+{"task_id": "entry_488", "prompt": "module dff_async_reset_enable (\n    input CLK,\n    input D,\n    input RESET, // Asynchronous active-low reset\n    input EN,    // Active-low enable\n    output reg Q,\n    output reg Q_N\n);\n"}
+{"task_id": "entry_489", "prompt": "module full_adder_en (\n    input A,\n    input B,\n    input Cin,\n    input En,\n    output reg Sum,\n    output reg Cout\n);\n"}
+{"task_id": "entry_490", "prompt": "module and_gate(\n    input a,\n    input b,\n    output out\n);\n"}
+{"task_id": "entry_491", "prompt": "module sky130_fd_sc_lp__o41a_m (\n    X,\n    A1,\n    A2,\n    A3,\n    A4,\n    B1,\n    VPWR,\n    VGND,\n    VPB,\n    VNB\n);\n"}
+{"task_id": "entry_492", "prompt": "module output_module(\n\tinput ctrl1_zone,\n\tinput ctrl2_zone,\n\tinput statusb_zone,\n\tinput [9:0] p1_in,\n\tinput [9:0] p2_in,\n\tinput nwp,\n\tinput ncd2,\n\tinput ncd1,\n\tinput system_mode,\n\toutput reg [7:0] m68k_data\n);\n"}
+{"task_id": "entry_493", "prompt": "module JOR4B(A1, A2, A3, A4, O);\n"}
+{"task_id": "entry_494", "prompt": "module counter (\n  input clk,\n  input rst,\n  output reg [1:0] count\n);\n"}
+{"task_id": "entry_495", "prompt": "module counter_4bit_sync_reset (\n  input clk,\n  input reset,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_496", "prompt": "module decoder_3to8 (\n    input [2:0] select,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_497", "prompt": "module adder_subtractor (\n    input [3:0] A,\n    input [3:0] B,\n    input mode,\n    output reg [3:0] result\n);\n"}
+{"task_id": "entry_498", "prompt": "module adder_4bit (A, B, Cin, S, Cout);\n"}
+{"task_id": "entry_499", "prompt": "module mux_4to1 (\n    input [WIDTH-1:0] in0,\n    input [WIDTH-1:0] in1,\n    input [WIDTH-1:0] in2,\n    input [WIDTH-1:0] in3,\n    input sel0,\n    input sel1,\n    output reg [WIDTH-1:0] out\n);\n"}
+{"task_id": "entry_500", "prompt": "module binary_counter(\n  input clk, reset, enable, load,\n  input [3:0] data_in,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_501", "prompt": "module logic_gate (\n    X ,\n    A1,\n    A2,\n    A3,\n    A4,\n    B1\n);\n"}
+{"task_id": "entry_502", "prompt": "module mux_4x1_8b (\n  input [7:0] in0,\n  input [7:0] in1,\n  input [7:0] in2,\n  input [7:0] in3,\n  input [1:0] select,\n  output reg [7:0] out\n);\n"}
+{"task_id": "entry_503", "prompt": "module test_if (\n    input [1:0] bad,\n    output reg result\n);\n"}
+{"task_id": "entry_504", "prompt": "module adder4bit_overflow (\n    input  [3:0] A,\n    input  [3:0] B,\n    input        Cin,\n    output [3:0] Sum,\n    output       Cout\n);\n"}
+{"task_id": "entry_505", "prompt": "module debounce(\n    input clk,\n    input PB,\n    output reg PB_state\n);\n"}
+{"task_id": "entry_506", "prompt": "module and_gate (\n    input A,\n    input B,\n    output Y\n);\n"}
+{"task_id": "entry_507", "prompt": "module mux_2to1 (\n    input sel,\n    input in0,\n    input in1,\n    output out\n);\n"}
+{"task_id": "entry_508", "prompt": "module SUB (\n    input [15:0] a,\n    input [15:0] b,\n    output reg [15:0] sub,\n    output reg carry,\n    output reg overflow\n);\n"}
+{"task_id": "entry_509", "prompt": "module level_sensitive_buffer_isolation_cell (\n    X,\n    A,\n    SLEEP,\n    VPWR\n);\n"}
+{"task_id": "entry_510", "prompt": "module up_counter\n(\n    input wire clk,\n    input wire rst,\n    input wire en,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_511", "prompt": "module calculator(\n    input [7:0] A,\n    input [7:0] B,\n    input [1:0] op,\n    output reg [7:0] Y\n);\n"}
+{"task_id": "entry_512", "prompt": "module six_input_one_output (\n    input  A1,\n    input  A2,\n    input  B1,\n    input  B2,\n    input  C1,\n    input  C2,\n    output Y\n);\n"}
+{"task_id": "entry_513", "prompt": "module max_value(\n    input [7:0] A,\n    input [7:0] B,\n    output reg [7:0] max\n);\n"}
+{"task_id": "entry_514", "prompt": "module binary_encoder (\n    input [1:0] D,\n    output reg [2:0] C\n);\n"}
+{"task_id": "entry_515", "prompt": "module up_counter (\n  input clk,\n  input reset,\n  input enable,\n  output reg [2:0] count\n);\n"}
+{"task_id": "entry_517", "prompt": "module and2b (\n    input  wire A_N,\n    input  wire B,\n    output wire X,\n    input  wire VPWR,\n    input  wire VGND,\n    input  wire VPB,\n    input  wire VNB\n);\n"}
+{"task_id": "entry_518", "prompt": "module mux_2to1 (\n    input A,         // Input signal A\n    input B,         // Input signal B\n    input SEL,       // Select signal\n    output Y         // Output signal Y\n);\n"}
+{"task_id": "entry_519", "prompt": "module counter(\n    input clk,\n    input reset,\n    output reg [7:0] count\n);\n"}
+{"task_id": "entry_520", "prompt": "module dff_async_reset_load (\n    input wire d,\n    input wire clk,\n    input wire reset,\n    input wire load,\n    output reg q\n);\n"}
+{"task_id": "entry_521", "prompt": "module check_1fs (\n  input [31:0] timeunit,\n  input [31:0] timeprecision,\n  output reg is_1fs\n);\n"}
+{"task_id": "entry_522", "prompt": "module same_input (\n  input A,\n  input B,\n  input C,\n  output reg out\n);\n"}
+{"task_id": "entry_523", "prompt": "module and_gate (\n    // Inputs\n    input A,\n    input B,\n    \n    // Outputs\n    output Y\n);\n"}
+{"task_id": "entry_524", "prompt": "module bar(\n  input clk,\n  input rst,\n  input [31:0] in,\n  output reg [31:0] out\n);\n"}
+{"task_id": "entry_525", "prompt": "module two_input_module (\n    input  wire input1,\n    input  wire input2,\n    input  wire input3,\n    input  wire input4,\n    input  wire input5,\n    input  wire input6,\n    input  wire input7,\n    output wire output1\n);\n"}
+{"task_id": "entry_526", "prompt": "module clock_gating_cell (\n    input  wire clk,\n    input  wire enable,\n    output wire gated_clk\n);\n"}
+{"task_id": "entry_527", "prompt": "module myDFFSR (\n    input D, \n    input C, \n    input R, \n    input S, \n    output reg Q\n    );\n"}
+{"task_id": "entry_529", "prompt": "module my_module (\n    input clk,\n    input rst,\n    input [15:0] data_in,\n    output reg [15:0] data_out,\n    output reg valid\n);\n"}
+{"task_id": "entry_530", "prompt": "module binary_counter (\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_531", "prompt": "module MUX4to1(\n    input [3:0] I,\n    input [1:0] S,\n    output reg O\n    );\n"}
+{"task_id": "entry_532", "prompt": "module zigbee_transmitter (\n    input wire clk,\n    input wire rst,\n    input wire data_in,\n    output reg data_out\n);\n"}
+{"task_id": "entry_533", "prompt": "module bitwise_and (\n    input [15:0] data_in,\n    input [15:0] mask,\n    input enable,\n    output [15:0] data_out\n);\n"}
+{"task_id": "entry_536", "prompt": "module schmitt_trigger #(\n    parameter real vth = 2.5,   // High threshold voltage\n    parameter real vtl = 0.5    // Hysteresis voltage\n)(\n    input  real in,    // Analog input signal\n    output reg  out    // Digital output\n);\n"}
+{"task_id": "entry_537", "prompt": "module add4bit (\n    input [3:0] A,\n    input [3:0] B,\n    output reg [3:0] Y\n);\n"}
+{"task_id": "entry_538", "prompt": "module nand_gate(\n    input a,\n    input b,\n    output y\n);\n"}
+{"task_id": "entry_539", "prompt": "module dff_asynchronous_set (\n    input wire CLK,\n    input wire D,\n    input wire SET_B,   // Asynchronous set, active low\n    output reg Q\n);\n"}
+{"task_id": "entry_540", "prompt": "module binary_converter(\n    input clk,\n    input [15:0] input_num,\n    output reg [15:0] binary_output\n);\n"}
+{"task_id": "entry_541", "prompt": "module shift_register(\n    input clk,\n    input reset,\n    input serial_in,\n    output [3:0] parallel_out\n);\n"}
+{"task_id": "entry_542", "prompt": "module mux_4to1_enable(input [7:0] in0, input [7:0] in1, input [7:0] in2, input [7:0] in3, input [1:0] sel, input en, output reg [7:0] out);\n"}
+{"task_id": "entry_543", "prompt": "module adder_subtractor_4bit (\n    input  [3:0] A,\n    input  [3:0] B,\n    input        SUB,\n    output [3:0] SUM,\n    output       CARRY\n);\n"}
+{"task_id": "entry_544", "prompt": "module bin2gray(\n    input [3:0] bin,\n    output [3:0] gray\n);\n"}
+{"task_id": "entry_546", "prompt": "module two_complement_abs (\n    input signed [15:0] number,\n    output reg [15:0] abs_value\n);\n"}
+{"task_id": "entry_547", "prompt": "module counter\n(\n    input clk,\n    input rst,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_548", "prompt": "module sky130_fd_sc_hs__or3 (\n    X,\n    A,\n    B,\n    C\n);\n"}
+{"task_id": "entry_549", "prompt": "module mux2to1 (\n                input data_in_0,\n                input data_in_1,\n                input select,\n                output data_out\n                );\n"}
+{"task_id": "entry_550", "prompt": "module clock_gate (\n    input  wire CLK,   // Clock input\n    input  wire EN,    // Enable\n    input  wire TE,    // Test enable\n    output wire ENCLK  // Gated clock output\n);\n"}
+{"task_id": "entry_551", "prompt": "module d_ff_en (\n  input CLK,\n  input EN,\n  input D,\n  output reg Q\n);\n"}
+{"task_id": "entry_552", "prompt": "module binary_counter_3bit (\n    input clk,\n    input rst,\n    output reg [2:0] count\n);\n"}
+{"task_id": "entry_553", "prompt": "module my_comb_logic (\n    input A1,\n    input A2,\n    input A3,\n    input B1,\n    input C1,\n    output X\n);\n"}
+{"task_id": "entry_554", "prompt": "module counter (\n    input clk,\n    input rst,\n    output reg [2:0] out\n);\n"}
+{"task_id": "entry_555", "prompt": "module bin2gray (\n    input  [3:0] binary,\n    output [3:0] gray\n);\n"}
+{"task_id": "entry_556", "prompt": "module shift_add(\n  input [15:0] a,\n  output [15:0] y\n);\n"}
+{"task_id": "entry_557", "prompt": "module up_down_counter (\n    input CLK,\n    input RST,\n    input DIR,\n    output reg [3:0] Q\n);\n"}
+{"task_id": "entry_559", "prompt": "module digital_circuit (\n    input  D,\n    input  SET_B,\n    input  CLK,\n    input  VPWR,\n    input  VGND,\n    output reg Q\n);\n"}
+{"task_id": "entry_561", "prompt": "module twos_complement(\n    input [3:0] in,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_563", "prompt": "module pulse_counter (\n    input clk,\n    input rst,\n    input pulse,\n    output reg [31:0] count\n);\n"}
+{"task_id": "entry_564", "prompt": "module six_to_one (\n    out_signal,\n    in_signal1,\n    in_signal2,\n    in_signal3,\n    in_signal4,\n    in_signal5,\n    in_signal6\n);\n"}
+{"task_id": "entry_565", "prompt": "module decoder (\n    input [1:0] SEL,\n    output reg [15:0] OUT\n);\n"}
+{"task_id": "entry_566", "prompt": "module SimpleCalculator(\n\tinput [7:0] a,\n\tinput [7:0] b,\n\tinput [1:0] op,\n\tinput clock,\n\toutput reg [15:0] result\n);\n"}
+{"task_id": "entry_567", "prompt": "module binary_counter(\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_568", "prompt": "module counter_4bit (\n    input clk,\n    input rst,\n    input en,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_569", "prompt": "module counter_4bit_async_reset_sync_enable (\n    input clk,\n    input reset,\n    input enable,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_570", "prompt": "module generate_HI_LO (\n    HI,\n    LO,\n    pullup0_out,\n    pulldown0_out,\n    pwrgood_pp\n);\n"}
+{"task_id": "entry_573", "prompt": "module binary_counter(\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_574", "prompt": "module example_module (\n  input clk,\n  input reset,\n  input signed [31:0] input_data,\n  output reg signed [31:0] output_data,\n  output reg valid\n);\n"}
+{"task_id": "entry_575", "prompt": "module reg3bit_parallel_load_clear (\n    input  wire [2:0] D,   // 3-bit input data\n    input  wire       CLK, // Clock input\n    input  wire [1:0] AR,  // 2-bit async reset control\n    input  wire       LD,  // Load enable\n    output reg  [2:0] Q    // 3-bit output (register value)\n);\n"}
+{"task_id": "entry_576", "prompt": "module multi_input_output (\n    input [7:0] A,\n    input [7:0] B,\n    input [7:0] C,\n    input [7:0] D,\n    input [7:0] E,\n    input [7:0] F,\n    input [7:0] G,\n    input [7:0] H,\n    output [7:0] Y\n);\n"}
+{"task_id": "entry_577", "prompt": "module left_shift_32(input [31:0] data_in, output [31:0] result);\n"}
+{"task_id": "entry_578", "prompt": "module alpha_blender (\n    input [29:0] background_data,\n    input [39:0] foreground_data,\n    output reg [9:0] new_red,\n    output reg [9:0] new_green,\n    output reg [9:0] new_blue\n);\n"}
+{"task_id": "entry_580", "prompt": "module binary_add_sub (\n  input  [3:0] A,\n  input  [3:0] B,\n  input        mode,\n  output [3:0] Y\n);\n"}
+{"task_id": "entry_581", "prompt": "module counter (\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_582", "prompt": "module counter(\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_583", "prompt": "module d_flip_flop (\n    input  wire d,        // Data input\n    input  wire clk,      // Clock input\n    input  wire we,       // Write enable\n    input  wire rst,      // Reset input\n    output reg  q,        // Q output\n    output wire q_bar     // Q-bar output (complement of q)\n);\n"}
+{"task_id": "entry_584", "prompt": "module shift_register (\n    input [3:0] in_data,\n    input [1:0] ctrl,\n    output [3:0] out_data\n    );\n"}
+{"task_id": "entry_585", "prompt": "module twos_complement (\n    input  [3:0] in,\n    output [3:0] out\n);\n"}
+{"task_id": "entry_586", "prompt": "module dff_srsc_ap (\n    input  wire clk,\n    input  wire d,\n    input  wire set,\n    input  wire reset,\n    input  wire preset,\n    output reg  q,\n    output wire q_bar\n);\n"}
+{"task_id": "entry_587", "prompt": "module nor4(\n    input  A,\n    input  B,\n    input  C,\n    input  D,\n    output Y\n);\n"}
+{"task_id": "entry_589", "prompt": "module counter(\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_593", "prompt": "module bitwise_and_or_not(\n    input A,\n    input B,\n    input C,\n    input D,\n    output Y\n);\n"}
+{"task_id": "entry_594", "prompt": "module up_counter_4bit (\n    input wire clk,\n    input wire reset,\n    input wire enable,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_595", "prompt": "module smallest_number(\n    input [3:0] A,\n    input [3:0] B,\n    input [3:0] C,\n    output reg [3:0] smallest\n);\n"}
+{"task_id": "entry_596", "prompt": "module count_ones(\n    input [31:0] in_vector,\n    output reg [5:0] out_count\n);\n"}
+{"task_id": "entry_597", "prompt": "module toggle_xor (\n   input clk,\n   input reset,\n   input toggle,\n   input in1,\n   input in2,\n   output reg out\n);\n"}
+{"task_id": "entry_598", "prompt": "module parity_check (\n    input clk,\n    input reset_n,\n    input [7:0] data_in,\n    output reg parity_out\n);\n"}
+{"task_id": "entry_599", "prompt": "module my_module (\n    Y   ,\n    A1  ,\n    A2  ,\n    B1  ,\n    C1  ,\n    D1  ,\n    VPWR,\n    VGND,\n    VPB ,\n    VNB\n);\n"}
+{"task_id": "entry_600", "prompt": "module SignExt (\n  input [15:0] in,\n  output reg [31:0] out\n);\n"}
+{"task_id": "entry_601", "prompt": "module MUX_4to1 (\n  input wire in0,\n  input wire in1,\n  input wire in2,\n  input wire in3,\n  input wire [1:0] sel,\n  output reg out\n);\n"}
+{"task_id": "entry_602", "prompt": "module shift_register_3bit_comb(\n    input  wire       data_in,\n    input  wire [2:0] prev_state, // previous state of the register (provided externally for combinational logic)\n    output wire [2:0] data_out\n);\n"}
+{"task_id": "entry_603", "prompt": "module binary_counter(\n  input clk,\n  input rst,\n  output reg [3:0] out\n);\n"}
+{"task_id": "entry_604", "prompt": "module and_combination (\n  input a,\n  input b,\n  input c,\n  output reg out\n);\n"}
+{"task_id": "entry_605", "prompt": "module shift_register_16 (\n    input        clk,\n    input        reset,\n    input        load,            // If high, parallel load data_in on rising clk\n    input        shift,           // If high, shift left with new bit at LSB on clk\n    input [15:0] data_in,         // Parallel data input\n    input        new_bit,         // Bit to shift in at LSB during shift\n    output [15:0] data_out        // Current shift register contents\n);\n"}
+{"task_id": "entry_606", "prompt": "module majority_3 (\n    input A,\n    input B,\n    input C,\n    output X\n);\n"}
+{"task_id": "entry_607", "prompt": "module dff (\n    input CLK,\n    input D,\n    input SCD,\n    input SCE,\n    input RESET_B,\n    output reg Q,\n    output Q_B\n);\n"}
+{"task_id": "entry_608", "prompt": "module BCD_to_Binary (\n  input  [3:0] bcd_in,\n  output reg [7:0] bin_out\n);\n"}
+{"task_id": "entry_609", "prompt": "module mux_2to1_enable (\n  input A,\n  input B,\n  input E,\n  output Y\n);\n"}
+{"task_id": "entry_610", "prompt": "module shift_sel(\n    input [3:0] in,\n    input [1:0] sel,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_611", "prompt": "module counter\n(\n  input clk,\n  input rst_n,\n  output reg [3:0] counter_out\n);\n"}
+{"task_id": "entry_612", "prompt": "module mux2to1 (\n    input A1_N,\n    input A2_N,\n    input B1,\n    input B2,\n    output Y\n);\n"}
+{"task_id": "entry_615", "prompt": "module clock_gate_d_ff_en (\n  input CLK,     // clock signal\n  input EN,      // enable signal\n  input TE,      // transparent enable signal\n  output reg ENCLK // gated clock signal\n);\n"}
+{"task_id": "entry_616", "prompt": "module decoder_3to8 (\n    input [2:0] in,\n    input en,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_617", "prompt": "module sky130_fd_sc_hs__o21a (\n    input  wire A1,\n    input  wire A2,\n    input  wire B1,\n    input  wire VPWR,\n    input  wire VGND,\n    output wire X\n);\n"}
+{"task_id": "entry_618", "prompt": "module karnaugh_map(\n  input wire A, B, C, D, E,\n  output reg F\n);\n"}
+{"task_id": "entry_619", "prompt": "module AddThree (\n    input [3:0] in,\n    output [3:0] out\n);\n"}
+{"task_id": "entry_620", "prompt": "module XOR_GATE (\n    input A,\n    input B,\n    output C\n);\n"}
+{"task_id": "entry_621", "prompt": "module three_to_one (\n    input  A,\n    input  B,\n    input  C,\n    output X\n);\n"}
+{"task_id": "entry_622", "prompt": "module counter_4bit (\n    input clk,\n    input reset,\n    input enable,\n    output reg [3:0] Q\n);\n"}
+{"task_id": "entry_623", "prompt": "module bin2gray (\n    input  [3:0] in,\n    output [3:0] out\n);\n"}
+{"task_id": "entry_624", "prompt": "module mux4to1(\n    input [3:0] in0,\n    input [3:0] in1,\n    input [3:0] in2,\n    input [3:0] in3,\n    input [1:0] sel,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_625", "prompt": "module sky130_fd_sc_hs__a2111o (\n    output X,\n    input  A1,\n    input  A2,\n    input  B1,\n    input  C1,\n    input  D1,\n    input  VPWR,\n    input  VGND\n);\n"}
+{"task_id": "entry_626", "prompt": "module OR3 (\n    input  [3:0] A,\n    input  [3:0] B,\n    output [3:0] Z\n);\n"}
+{"task_id": "entry_627", "prompt": "module binary_addition(\n    input clk,\n    input [7:0] A,\n    input [7:0] B,\n    output reg [7:0] C\n);\n"}
+{"task_id": "entry_628", "prompt": "module multiplier (\n  input A,\n  input B,\n  input enable,\n  output reg C\n);\n"}
+{"task_id": "entry_629", "prompt": "module comparator (\n    input [3:0] A,\n    input [3:0] B,\n    output reg [1:0] OUT\n);\n"}
+{"task_id": "entry_630", "prompt": "module my_module (\n    Q,\n    Q_N,\n    CLK,\n    D\n);\n"}
+{"task_id": "entry_632", "prompt": "module d_flip_flop (\n    input D,\n    input CLK,\n    output Q\n);\n"}
+{"task_id": "entry_633", "prompt": "module synchronous_counter (\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_634", "prompt": "module binary_to_gray_converter (\n  input clk,\n  input areset,\n  input [3:0] bin,\n  output reg [3:0] gray\n);\n"}
+{"task_id": "entry_635", "prompt": "module adder_16bit (\n    input [15:0] A,\n    input [15:0] B,\n    input CIN,\n    output reg [15:0] S\n);\n"}
+{"task_id": "entry_636", "prompt": "module mux_2to1(\n    input A,\n    input B,\n    input S,\n    output Z\n);\n"}
+{"task_id": "entry_637", "prompt": "module mux_2_to_1 (\n    input in_0,\n    input in_1,\n    input select,\n    output out\n);\n"}
+{"task_id": "entry_638", "prompt": "module binary_counter (\n  input clk,\n  input rst,\n  output reg [n-1:0] count\n);\n"}
+{"task_id": "entry_640", "prompt": "module DFF_async_reset (\n             input clk,\n             input d,\n             input rst_n,\n             output logic q);\n"}
+{"task_id": "entry_641", "prompt": "module gray_code (\n    input  [3:0] A,\n    output [3:0] Q\n);\n"}
+{"task_id": "entry_642", "prompt": "module mux_4to1 (\n    input [3:0] in0,\n    input [3:0] in1,\n    input [3:0] in2,\n    input [3:0] in3,\n    input [1:0] sel,\n    input enable,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_643", "prompt": "module bitwise_xor(\n    input [31:0] a,\n    input [31:0] b,\n    output [31:0] result\n);\n"}
+{"task_id": "entry_644", "prompt": "module dff_async_set_reset (\n    input  wire clk,\n    input  wire reset, // asynchronous reset, active low\n    input  wire set,   // asynchronous set, active low\n    input  wire d,\n    output reg  q,\n    output reg  qb\n);\n"}
+{"task_id": "entry_646", "prompt": "module shift_register_4bit_parallel_load (\n    input  wire A,\n    input  wire B,\n    input  wire C,\n    input  wire D,\n    input  wire load,\n    input  wire clk,\n    output reg  [3:0] Q\n);\n"}
+{"task_id": "entry_648", "prompt": "module and4 (\n    input A,\n    input B,\n    input C,\n    input D,\n    output X,\n    input VPWR,\n    input VGND,\n    input VPB,\n    input VNB\n);\n"}
+{"task_id": "entry_649", "prompt": "module binary_counter(\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_650", "prompt": "module sky130_fd_sc_hd__a21boi (\n    Y   ,\n    A1  ,\n    A2  ,\n    B1_N\n);\n"}
+{"task_id": "entry_651", "prompt": "module addsub_4bit (\n    input [3:0] O,\n    input [3:0] A,\n    input C,\n    output reg [3:0] S,\n    output reg [3:0] D,\n    output reg B\n);\n"}
+{"task_id": "entry_652", "prompt": "module barrel_shifter (\n    input [3:0] a,\n    input [3:0] b,\n    input [1:0] mode,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_653", "prompt": "module concat_shift (\n    input  [7:0] A,\n    input  [7:0] B,\n    output [15:0] C\n);\n"}
+{"task_id": "entry_654", "prompt": "module bin2gray (\n    input  [3:0] bin_in,\n    output [3:0] gray_out\n);\n"}
+{"task_id": "entry_656", "prompt": "module bin_to_gray(\n    input [3:0] bin,\n    output [3:0] gray\n);\n"}
+{"task_id": "entry_657", "prompt": "module simple_calculator (\n    input        clk,\n    input        rst,\n    input  [1:0] op,\n    input  [7:0] a,\n    input  [7:0] b,\n    output reg [7:0] result,\n    output reg      valid\n);\n"}
+{"task_id": "entry_658", "prompt": "module mux21 (\n  input A,\n  input B,\n  input S,\n  output MO\n);\n"}
+{"task_id": "entry_662", "prompt": "module add8bit (\n    input [7:0] in1,\n    input [7:0] in2,\n    output reg [7:0] sum\n    );\n"}
+{"task_id": "entry_663", "prompt": "module adder16 (\n    input [15:0] A,\n    input [15:0] B,\n    output [15:0] Y\n);\n"}
+{"task_id": "entry_664", "prompt": "module clock_gating (\n    input  wire CLK,\n    input  wire EN,\n    input  wire TE,\n    output wire ENCLK\n);\n"}
+{"task_id": "entry_665", "prompt": "module comparator_3bit (\n    input  [2:0] A,\n    input  [2:0] B,\n    output reg [1:0] comp_out\n);\n"}
+{"task_id": "entry_666", "prompt": "module dff_async_reset_enable (\n    input CLK,\n    input D,\n    input RESET_N,\n    input ENABLE,\n    output Q,\n    output Q_N\n);\n"}
+{"task_id": "entry_667", "prompt": "module clock_divider #(\n  parameter div = 2 // divisor value\n)(\n  input clk_in,\n  input rst,\n  output reg clk_out    // NO LONGER a wire; now a reg\n);\n"}
+{"task_id": "entry_668", "prompt": "module comparator (\n    input [15:0] A,\n    input [15:0] B,\n    output reg result\n);\n"}
+{"task_id": "entry_669", "prompt": "module mode_selector(\n    input wire [1:0] mode,\n    input wire [3:0] in,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_670", "prompt": "module adder_subtractor (\n    input [3:0] A,\n    input [3:0] B,\n    input C,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_671", "prompt": "module synchronous_counter (\n    input clk,\n    input reset,\n    input enable,\n    input control,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_672", "prompt": "module mux_2to1(\n  input  in0,\n  input  in1,\n  input  sel,\n  output out\n);\n"}
+{"task_id": "entry_673", "prompt": "module dff_sr (\n    Q      ,\n    Q_N    ,\n    D      ,\n    CLK    ,\n    SET_B  ,\n    RESET_B\n);\n"}
+{"task_id": "entry_675", "prompt": "module adder_8bit (\n    input [7:0] a,\n    input [7:0] b,\n    input enable,\n    output reg [8:0] sum\n);\n"}
+{"task_id": "entry_676", "prompt": "module four_input_one_output (\n    input a,\n    input b,\n    input c,\n    input d,\n    output x\n);\n"}
+{"task_id": "entry_678", "prompt": "module sky130_fd_sc_ms__fa (\n    input A,\n    input B,\n    input CIN,\n    input VPWR,\n    input VGND,\n    input VPB,\n    input VNB,\n    output COUT,\n    output SUM\n);\n"}
+{"task_id": "entry_679", "prompt": "module absolute_value_calculator (\n  input signed [7:0] input_num,\n  output reg [7:0] abs_value\n);\n"}
+{"task_id": "entry_680", "prompt": "module three_input_module (\n    input  wire A1,\n    input  wire A2,\n    input  wire B1,\n    output wire X\n);\n"}
+{"task_id": "entry_681", "prompt": "module mux4to1 (\n    input  A0,\n    input  A1,\n    input  A2,\n    input  A3,\n    input  S0,\n    input  S1,\n    output Y\n);\n"}
+{"task_id": "entry_682", "prompt": "module negate (A, B, S, MO);\n"}
+{"task_id": "entry_683", "prompt": "module six_bit_counter(\n  input clk,\n  input rst,\n  input set,\n  input en,\n  output reg [5:0] cnt\n);\n"}
+{"task_id": "entry_684", "prompt": "module bitwise_and(\n  input clk,\n  input rst,\n  input [7:0] a,\n  input [7:0] b,\n  output reg [7:0] out,\n  output reg valid\n);\n"}
+{"task_id": "entry_687", "prompt": "module comparator_2bit (\n    input [1:0] A,\n    input [1:0] B,\n    output [1:0] EQ,\n    output [1:0] GT\n);\n"}
+{"task_id": "entry_688", "prompt": "module r_RX_BUF_OBJ1_BYTE_0 (\n    input        clk,\n    input        reset,\n    input        wenb,\n    input  [7:0] in_data,\n    output [7:0] reg_0x34\n);\n"}
+{"task_id": "entry_689", "prompt": "module clk_generator (\n    input wire Net_53,\n    input wire Net_55,\n    output reg clk\n);\n"}
+{"task_id": "entry_692", "prompt": "module mux2(\n    input wire clk,   // clock signal\n    input wire sel,   // select signal\n    input wire in1,   // input signal 1\n    input wire in2,   // input signal 2\n    output wire out   // output signal\n);\n"}
+{"task_id": "entry_693", "prompt": "module dff_ar (\n  input clk, rst, d,\n  output reg q\n);\n"}
+{"task_id": "entry_694", "prompt": "module mux2to1\n  (\n   input a,\n   input b,\n   input sel,\n   output reg out\n   );\n"}
+{"task_id": "entry_696", "prompt": "module mux_4to1(\n    input wire [3:0] in,\n    input wire [1:0] sel,\n    output wire out\n);\n"}
+{"task_id": "entry_697", "prompt": "module sky130_fd_sc_hd__ha (\n    input A,\n    input B,\n    input VPWR,\n    input VGND,\n    input VPB,\n    input VNB,\n    output COUT,\n    output SUM\n);\n"}
+{"task_id": "entry_698", "prompt": "module mux_2to1 (\n    input A,\n    input B,\n    input SEL,\n    output reg Y\n);\n"}
+{"task_id": "entry_699", "prompt": "module shift_register (\n    input wire clk,\n    input wire rst,\n    input wire [3:0] data_in,\n    input wire shift,      // 0: parallel load, 1: shift mode\n    input wire dir,        // 0: shift right, 1: shift left (only used in shift mode)\n    output reg [3:0] data_out\n);\n"}
+{"task_id": "entry_700", "prompt": "module ArithmeticOp(\n    input [7:0] a,\n    input [7:0] b,\n    output reg [15:0] result\n);\n"}
+{"task_id": "entry_701", "prompt": "module mux_2to1 (\n    input A,\n    input B,\n    input SEL,\n    output Y\n);\n"}
+{"task_id": "entry_703", "prompt": "module mux_2to1 (\n    input A,\n    input B,\n    input S,\n    output Y\n);\n"}
+{"task_id": "entry_704", "prompt": "module my_module(\n  input async_reset_neg,\n  input fb_clk,\n  input [31:0] adg_int,\n  input fb_tag_r,\n  input fb_we_r,\n  output reg output_signal\n);\n"}
+{"task_id": "entry_705", "prompt": "module comb_circuit (\n  input [3:0] in,\n  output reg [2:0] out\n);\n"}
+{"task_id": "entry_706", "prompt": "module barrel_shifter_4bit (\n    input  wire [3:0] in,          // 4-bit input to be shifted\n    input  wire [1:0] shift,       // Shift control: 00=LLS, 01=LRS, 10=ALS, 11=ARS\n    output reg  [3:0] out          // 4-bit output\n);\n"}
+{"task_id": "entry_707", "prompt": "module mux4to1_8bit (\n    input  [7:0] in0,\n    input  [7:0] in1,\n    input  [7:0] in2,\n    input  [7:0] in3,\n    input  [1:0] sel,\n    input        en,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_708", "prompt": "module and3 (\n    input  A,\n    input  B,\n    input  C,\n    output X\n);\n"}
+{"task_id": "entry_710", "prompt": "module my_logic_function (\n    // Inputs\n    input A1,\n    input A2,\n    input A3,\n    input B1,\n    input B2,\n    \n    // Outputs\n    output Y\n);\n"}
+{"task_id": "entry_711", "prompt": "module register (\n    input d,\n    input clk,\n    input ena,\n    input clrn,\n    input prn,\n    output reg q\n);\n"}
+{"task_id": "entry_712", "prompt": "module square_wave_generator(\n    input wire clk,\n    output reg square_wave\n);\n"}
+{"task_id": "entry_714", "prompt": "module sky130_fd_sc_ms__nor3 (\n    input  A,\n    input  B,\n    input  C,\n    output Y\n);\n"}
+{"task_id": "entry_715", "prompt": "module soc_design_SystemID (\n  // inputs:\n  address,\n  clock,\n  reset_n,\n\n  // outputs:\n  readdata\n);\n"}
+{"task_id": "entry_716", "prompt": "module simple_calculator(\n    input  [3:0] A,\n    input  [3:0] B,\n    input        op,\n    output [3:0] Z\n);\n"}
+{"task_id": "entry_717", "prompt": "module mux_2to1 (\n    input A,\n    input B,\n    input S,\n    output Y\n);\n"}
+{"task_id": "entry_718", "prompt": "module barrel_shifter_4bit (\n    input  [3:0] A,\n    input  [1:0] SHIFT,\n    output reg [3:0] Y\n);\n"}
+{"task_id": "entry_721", "prompt": "module lab5_2_1 (\n    input [1:0] ain,\n    input clk,\n    input reset,\n    output reg yout\n    );\n"}
+{"task_id": "entry_722", "prompt": "module four_bit_adder(\n    input [3:0] A,\n    input [3:0] B,\n    output reg [3:0] C\n);\n"}
+{"task_id": "entry_723", "prompt": "module adder (\n    input  [7:0] A,\n    input  [7:0] B,\n    output [7:0] sum,\n    output       carry_out\n);\n"}
+{"task_id": "entry_724", "prompt": "module three_input_gate(\n    input A1,\n    input A2,\n    input B1,\n    output reg X\n);\n"}
+{"task_id": "entry_725", "prompt": "module clock_gate (\n  input CLK,\n  input EN,\n  input TE,\n  input RST,\n  output reg ENCLK\n);\n"}
+{"task_id": "entry_726", "prompt": "module niosII_system_nios2_0_nios2_oci_td_mode (\n    input [8:0] ctrl,\n    output reg [3:0] td_mode\n);\n"}
+{"task_id": "entry_727", "prompt": "module adder_module(\n  input [7:0] a,\n  input [7:0] b,\n  output [7:0] sum\n);\n"}
+{"task_id": "entry_729", "prompt": "module constant_voltage_driver (\n    input wire control,          // Control signal\n    input wire [7:0] vref,       // Voltage reference input (8-bit, can be adjusted as needed)\n    output wire [7:0] vout       // Output constant voltage signal\n);\n"}
+{"task_id": "entry_730", "prompt": "module signal_repeater (\n    input  [135:0] in,\n    output reg [135:0] out\n);\n"}
+{"task_id": "entry_731", "prompt": "module alu_04(output reg [3:0]Z, input [1:0]op, input [3:0] A, B, C);\n"}
+{"task_id": "entry_732", "prompt": "module adder_subtractor_4bit (\n    input  [3:0] A,\n    input  [3:0] B,\n    input        C,          // Control: 0 = add, 1 = subtract\n    output [3:0] S,\n    output       C_out\n);\n"}
+{"task_id": "entry_733", "prompt": "module counter(\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_734", "prompt": "module modulo_operator (\n  input [31:0] div,\n  input [31:0] divisor,\n  output reg [31:0] rem\n);\n"}
+{"task_id": "entry_735", "prompt": "module counter (\n    input CLK,\n    input RST,\n    input UP_DOWN,\n    output reg [3:0] Q\n);\n"}
+{"task_id": "entry_737", "prompt": "module four_and_one_control (\n    input A1,\n    input A2,\n    input A3,\n    input A4,\n    input B1,\n    input VPWR,\n    input VGND,\n    input VPB,\n    input VNB,\n    output Y\n);\n"}
+{"task_id": "entry_738", "prompt": "module logic_gate (\n    input A,\n    input B,\n    input C,\n    input D,\n    input E,\n    input F,\n    input G,\n    input H,\n    output X\n);\n"}
+{"task_id": "entry_739", "prompt": "module priority_encoder8 (\n    input  wire [7:0] I,       // Inputs: I[7] is highest priority, I[0] is lowest\n    output reg  [2:0] O        // Output code: O[2:0]\n);\n"}
+{"task_id": "entry_740", "prompt": "module adder_8bit_valid (\n    input  [7:0] A,\n    input  [7:0] B,\n    input        Valid_add,\n    output reg [8:0] Sum\n);\n"}
+{"task_id": "entry_741", "prompt": "module counter_2bit_async_reset (\n    input clk,\n    input rst,\n    output reg [1:0] count\n);\n"}
+{"task_id": "entry_742", "prompt": "module mux_2x4 (\n    input [1:0] in,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_743", "prompt": "module bin2gray(\n    input  [3:0] bin_in,\n    output reg [3:0] gray_out\n);\n"}
+{"task_id": "entry_744", "prompt": "module dff_async_set_reset (\n    input wire CLK,\n    input wire D,\n    input wire SET,\n    input wire RESET,\n    output reg Q,\n    output reg Q_bar\n);\n"}
+{"task_id": "entry_745", "prompt": "module mux\n  #(parameter WIDTH = 1)\n  (\n    input wire ctrl,\n    input wire [WIDTH-1:0] D0,\n    input wire [WIDTH-1:0] D1,\n    output reg [WIDTH-1:0] S\n  );\n"}
+{"task_id": "entry_748", "prompt": "module counter_8bit (\n    input clk,\n    input reset,\n    input enable,\n    output reg [7:0] count\n);\n"}
+{"task_id": "entry_749", "prompt": "module barrel_shifter_4bit (\n    input  [3:0] DATA_IN,\n    input  [1:0] SHIFT,\n    output reg [3:0] DATA_OUT\n);\n"}
+{"task_id": "entry_750", "prompt": "module mux4to1 (\n    input  wire A,\n    input  wire B,\n    input  wire C,\n    input  wire D,\n    input  wire [1:0] S,\n    output wire Y\n);\n"}
+{"task_id": "entry_751", "prompt": "module shift_register_parallel_load (\n    input clk, // clock input\n    input rst, // reset input\n    input load, // load control input\n    input [7:0] in, // parallel input\n    output reg [7:0] out // output\n);\n"}
+{"task_id": "entry_752", "prompt": "module dff_async_set_reset (\n    input wire clk,\n    input wire reset,   // Asynchronous active-low reset\n    input wire set,     // Asynchronous active-low set\n    input wire d,\n    output reg q,\n    output reg q_bar\n);\n"}
+{"task_id": "entry_755", "prompt": "module binary_counter(\n    input wire clk,\n    input wire reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_756", "prompt": "module sysgen_reinterpret_4bd3487388 (\n  input [(34 - 1):0] input_port,\n  output [(34 - 1):0] output_port,\n  input clk,\n  input ce,\n  input clr);\n"}
+{"task_id": "entry_757", "prompt": "module counter (\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_758", "prompt": "module d_ff_with_set_clear (\n  input clk,\n  input d,\n  input set,\n  input clear,\n  output reg q\n);\n"}
+{"task_id": "entry_760", "prompt": "module arithmetic_8bit (\n    input signed [7:0] A,\n    input signed [7:0] B,\n    input sel,\n    output reg signed [7:0] Y\n);\n"}
+{"task_id": "entry_761", "prompt": "module dff_async_reset (\n    input D,\n    input CLK,\n    input RESET,\n    output reg Q\n);\n"}
+{"task_id": "entry_762", "prompt": "module my_module (\n    input  wire A1,\n    input  wire A2,\n    input  wire B1,\n    input  wire B2,\n    input  wire C1,\n    input  wire VPWR,\n    input  wire VGND,\n    input  wire VPB,\n    input  wire VNB,\n    output wire Y\n);\n"}
+{"task_id": "entry_763", "prompt": "module truth_table(\n    input  wire A,\n    input  wire B,\n    input  wire C,\n    input  wire D,\n    output wire X\n);\n"}
+{"task_id": "entry_764", "prompt": "module counter (\n  // inputs:\n  clk,\n  reset,\n  \n  // outputs:\n  count\n);\n"}
+{"task_id": "entry_765", "prompt": "module greater_of_two (\n    input [3:0] A,\n    input [3:0] B,\n    output reg [3:0] G\n);\n"}
+{"task_id": "entry_766", "prompt": "module mux_4to1 (\n    input [3:0] in_0,\n    input [3:0] in_1,\n    input [3:0] in_2,\n    input [3:0] in_3,\n    input [1:0] sel,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_769", "prompt": "module up_counter (\n  input clk,\n  input reset,\n  output reg [2:0] count\n);\n"}
+{"task_id": "entry_770", "prompt": "module sky130_fd_sc_hd__a31o_2 (\n    X   ,\n    A1  ,\n    A2  ,\n    A3  ,\n    B1  ,\n    VPWR,\n    VGND,\n    VPB ,\n    VNB\n);\n"}
+{"task_id": "entry_771", "prompt": "module comparator(\n    input [1:0] signal_d,\n    input [2:0] signal_e,\n    output signal_f\n);\n"}
+{"task_id": "entry_774", "prompt": "module three_input_gate (\n    input clk,\n    input A1,\n    input A2,\n    input B1,\n    output reg Y\n);\n"}
+{"task_id": "entry_775", "prompt": "module concat_module (\n  input [(16 - 1):0] in0,\n  input [(16 - 1):0] in1,\n  output [(32 - 1):0] y,\n  input clk,\n  input ce,\n  input clr\n);\n"}
+{"task_id": "entry_776", "prompt": "module mux_2to1_enable (\n  input [3:0] a,\n  input [3:0] b,\n  input en,\n  output reg [3:0] mux_out\n);\n"}
+{"task_id": "entry_777", "prompt": "module binary_counter (\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_779", "prompt": "module bitwise_op(\n    input [3:0] A,\n    input [3:0] B,\n    input [1:0] sel,\n    output reg [3:0] out\n    );\n"}
+{"task_id": "entry_780", "prompt": "module counter_4bit (\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_781", "prompt": "module binary_counter (\n    input clk,\n    input rst,\n    input en,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_782", "prompt": "module four_bit_adder(\n    input [3:0] a,\n    input [3:0] b,\n    input enable,\n    output reg [3:0] sum\n);\n"}
+{"task_id": "entry_783", "prompt": "module majority (\n    input  A,\n    input  B,\n    input  C,\n    output X\n);\n"}
+{"task_id": "entry_784", "prompt": "module binary_counter\n(\n  input clk,\n  input reset,\n  input count_up,\n  output reg [3:0] count\n);\n"}
+{"task_id": "entry_785", "prompt": "module counter (\n    input clk,\n    input reset,\n    input load,\n    input [3:0] data,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_786", "prompt": "module counter (\n    input clk,\n    input enable,\n    output reg [3:0] Q\n);\n"}
+{"task_id": "entry_787", "prompt": "module six_to_one (\n    input A1,\n    input A2,\n    input B1,\n    input B2,\n    input C1,\n    input D1,\n    output reg X\n);\n"}
+{"task_id": "entry_788", "prompt": "module trunc(\n  input [31:0] in,\n  output [15:0] out\n);\n"}
+{"task_id": "entry_790", "prompt": "module RegisterAnd\n   (\n    EN,\n    D,\n    CLK,\n    Q_AND\n    );\n"}
+{"task_id": "entry_792", "prompt": "module selector_module(\n    input [1:0] SEL,\n    input signed [7:0] A,\n    input signed [7:0] B,\n    output reg [7:0] OUT\n);\n"}
+{"task_id": "entry_793", "prompt": "module SimpleCalculator(\n    input [15:0] A,\n    input [15:0] B,\n    input [1:0] op,\n    output reg [15:0] out\n);\n"}
+{"task_id": "entry_795", "prompt": "module my_full_adder (\n    COUT,\n    SUM ,\n    A   ,\n    B   ,\n    CIN \n);\n"}
+{"task_id": "entry_796", "prompt": "module calculator(\n    input [7:0] A,\n    input [7:0] B,\n    input [1:0] op,\n    output [15:0] result\n);\n"}
+{"task_id": "entry_797", "prompt": "module shift_register(\n  input clk,\n  input reset,\n  input load,\n  input [3:0] data_in,\n  output reg [3:0] data_out\n);\n"}
+{"task_id": "entry_798", "prompt": "module mux4to1 (\n    input A,\n    input B,\n    input C,\n    input D,\n    input S0,\n    input S1,\n    output Y\n);\n"}
+{"task_id": "entry_799", "prompt": "module counter (\n    input clk,\n    input rst,\n    input en,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_800", "prompt": "module binary_counter(\n    input clk,\n    input reset,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_802", "prompt": "module signal_mux (\n    input  A1,\n    input  A2,\n    input  A3,\n    input  B1,\n    output X\n);\n"}
+{"task_id": "entry_803", "prompt": "module four_input_and_gate (\n    input A,\n    input B,\n    input C,\n    input D,\n    output Y\n);\n"}
+{"task_id": "entry_804", "prompt": "module comparator (\n  input [3:0] A,\n  input [3:0] B,\n  input [1:0] op,\n  output reg eq\n);\n"}
+{"task_id": "entry_805", "prompt": "module counter (\n  input clk,\n  input ce,\n  input clr,\n  input [7:0] count,\n  output [7:0] out\n);\n"}
+{"task_id": "entry_806", "prompt": "module bitwise_operation(\n    input [7:0] a_in,\n    input [7:0] b_in,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_807", "prompt": "module charmander_jump_pixel(clka, wea, addra, dina, douta);\n"}
+{"task_id": "entry_808", "prompt": "module adder (\n  input reset,\n  input clk,\n  input enable,\n  input [4:0] data_in,\n  output reg [4:0] data_out\n);\n"}
+{"task_id": "entry_809", "prompt": "module counter_2bit (\n    input clk,\n    input rst,\n    input ctrl,\n    output reg [1:0] out\n);\n"}
+{"task_id": "entry_810", "prompt": "module twos_comp (\n    input [3:0] bin_in,\n    output [3:0] twos_comp_out\n);\n"}
+{"task_id": "entry_813", "prompt": "module up_down_counter (\n    input clk,\n    input rst,\n    input up_down,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_814", "prompt": "module adder_module(\n   input clk,\n   input rst,\n   input [3:0] in_val,\n   output reg [3:0] out_val\n);\n"}
+{"task_id": "entry_815", "prompt": "module adder (\n   input [2:0] A,\n   input [2:0] B,\n   output [2:0] S,\n   output Cout\n);\n"}
+{"task_id": "entry_816", "prompt": "module four_bit_comparator (\n  input [3:0] A,\n  input [3:0] B,\n  output reg out\n);\n"}
+{"task_id": "entry_817", "prompt": "module mux_4to1 (\n  input [3:0] in,\n  input [1:0] sel,\n  output reg out\n);\n"}
+{"task_id": "entry_818", "prompt": "module d_ff_async_reset (\n    input CK,\n    input D,\n    input RST,\n    output reg Q,\n    output reg QN\n);\n"}
+{"task_id": "entry_819", "prompt": "module adder_subtractor_16bit (\n    input  [15:0] A,\n    input  [15:0] B,\n    input         CIN,\n    input         MODE,  // 0: add, 1: subtract\n    output [15:0] Q\n);\n"}
+{"task_id": "entry_820", "prompt": "module reverse16(\n    input  [15:0] in,\n    output reg [15:0] out\n);\n"}
+{"task_id": "entry_821", "prompt": "module my_or(\n    input A,\n    input B,\n    input C,\n    input D_N,\n    output X\n);\n"}
+{"task_id": "entry_822", "prompt": "module digital_circuit (\n    output X,\n    input A1,\n    input A2,\n    input B1,\n    input C1,\n    input D1,\n    input VPWR,\n    input VGND\n);\n"}
+{"task_id": "entry_823", "prompt": "module adder_subtractor_4bit (\n    input [3:0] a,\n    input [3:0] b,\n    input sub,\n    output reg [3:0] s\n);\n"}
+{"task_id": "entry_824", "prompt": "module four_bit_adder (\n    A,\n    B,\n    C\n);\n"}
+{"task_id": "entry_825", "prompt": "module binary_counter(\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_827", "prompt": "module comparator_4bit (\n  input [3:0] a, // 4-bit input a\n  input [3:0] b, // 4-bit input b\n  input [1:0] control, // 2-bit control input\n  output reg out // Single bit output\n);\n"}
+{"task_id": "entry_828", "prompt": "module mux_4to1 (\n  input [3:0] data,\n  input [1:0] sel,\n  output reg out\n);\n"}
+{"task_id": "entry_829", "prompt": "module adder (\n    input [3:0] in1,\n    input [3:0] in2,\n    output [4:0] out1\n);\n"}
+{"task_id": "entry_830", "prompt": "module ArithmeticUnit(\n\tinput [3:0] A,\n\tinput [3:0] B,\n\tinput [2:0] C,\n\toutput reg [3:0] R\n\t);\n"}
+{"task_id": "entry_831", "prompt": "module BOOL_EXP (\n  input A,\n  input B,\n  output OUT\n);\n"}
+{"task_id": "entry_832", "prompt": "module sky130_fd_sc_hs__o2bb2a (\n    X   ,\n    A1_N,\n    A2_N,\n    B1  ,\n    B2\n);\n"}
+{"task_id": "entry_833", "prompt": "module six_bit_adder (\n    input clk,\n    input rst_l,\n    input [5:0] data_in,\n    output reg [7:0] data_out\n);\n"}
+{"task_id": "entry_835", "prompt": "module shift_register(\n    input clk,\n    input load,\n    input [3:0] data_in,\n    input shift,\n    output [3:0] data_out\n);\n"}
+{"task_id": "entry_836", "prompt": "module digital_logic (\n    //# {{data|Data Signals}}\n    input  A1_N,\n    input  A2_N,\n    input  B1  ,\n    input  B2  ,\n    output X   ,\n\n    //# {{power|Power}}\n    input  VPB ,\n    input  VPWR,\n    input  VGND,\n    input  VNB\n);\n"}
+{"task_id": "entry_838", "prompt": "module dff_sr (\n    input clk,\n    input d,\n    input set,\n    input reset,\n    output reg q,\n    output reg q_n\n);\n"}
+{"task_id": "entry_839", "prompt": "module ms_ff(\n    input clk,\n    input reset,\n    input data_in,\n    input enable_1,\n    input enable_2,\n    output reg data_out\n);\n"}
+{"task_id": "entry_841", "prompt": "module subtractor (\n    input [3:0] A,\n    input [3:0] B,\n    output reg [3:0] Y\n);\n"}
+{"task_id": "entry_842", "prompt": "module output_select(\n    input sel,\n    input [7:0] out1,\n    input [7:0] out2,\n    output reg [7:0] out\n);\n"}
+{"task_id": "entry_845", "prompt": "module mux_2to1 (\n    Y,\n    A,\n    B,\n    S\n);\n"}
+{"task_id": "entry_846", "prompt": "module calculator(output reg [7:0] result, input [7:0] num1, input [7:0] num2, input [2:0] op);\n"}
+{"task_id": "entry_847", "prompt": "module memory_module (\n  input clk,\n  input [19:0] addr,\n  output reg [35:0] data\n);\n"}
+{"task_id": "entry_848", "prompt": "module combinational_circuit(\n    input [3:0] A,\n    input [1:0] B,\n    input C,\n    input D,\n    input E,\n    output X\n);\n"}
+{"task_id": "entry_849", "prompt": "module binary_counter_with_reset (\n    input clk,\n    input rst,\n    output reg [3:0] count\n);\n"}
+{"task_id": "entry_850", "prompt": "module concat3 (\n    input i2,\n    input i1,\n    input i0,\n    output [2:0] o\n);\n"}
+{"task_id": "entry_852", "prompt": "module up_counter_3bit(\n   input clk,\n   input reset,\n   output reg [2:0] count\n);\n"}
+{"task_id": "entry_853", "prompt": "module twos_complement(\n  input [3:0] in,\n  output [3:0] out\n);\n"}
+{"task_id": "entry_854", "prompt": "module DFF_SS_SR (\n    input clk,\n    input ss,\n    input sr,\n    input d,\n    output reg q\n);\n"}
+{"task_id": "entry_855", "prompt": "module barrel_shifter (\n    input [3:0] data_in,\n    input [1:0] shift,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_856", "prompt": "module xor_module(\n    input [3:0] data_in,\n    output [3:0] data_out\n);\n"}
+{"task_id": "entry_857", "prompt": "module gray_code(input clk, input reset, input [3:0] bin_in, output [3:0] gray_out);\n"}
+{"task_id": "entry_859", "prompt": "module calculator(\n    input [3:0] a,\n    input [3:0] b,\n    input op,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_860", "prompt": "module Decoder3to8(\n// Inputs\ninput A,\ninput B,\ninput C,\n// Outputs\noutput reg [7:0] Y\n);\n"}
+{"task_id": "entry_861", "prompt": "module counter_4bit (\n    input clk,\n    input rst,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_862", "prompt": "module barrel_shifter (\n    input [3:0] data,\n    input shift_left,\n    input shift_right,\n    input rotate_right,\n    output reg [3:0] shifted_data\n);\n"}
+{"task_id": "entry_863", "prompt": "module counter_4bit(\n  input clk,\n  input reset,\n  output reg [3:0] count_out\n);\n"}
+{"task_id": "entry_864", "prompt": "module priority_encoder (\n    input wire clk,\n    input wire rst,\n    input wire [3:0] in,\n    output reg [1:0] out\n);\n"}
+{"task_id": "entry_865", "prompt": "module lut5(\n    input SEL,\n    input D,\n    input C,\n    input B,\n    input A,\n    output reg Z\n);\n"}
+{"task_id": "entry_866", "prompt": "module ycbcr_thresholding (\n    input [7:0] Y,\n    input [7:0] Cb,\n    input [7:0] Cr,\n    input [7:0] Ta,\n    input [7:0] Tb,\n    input [7:0] Tc,\n    input [7:0] Td,\n    output reg [7:0] binary\n);\n"}
+{"task_id": "entry_867", "prompt": "module counter (\n    input clk,\n    input en,\n    output reg [3:0] out\n);\n"}
+{"task_id": "entry_868", "prompt": "module shift_register (\n    input CLK,\n    input LOAD,\n    input SHIFT,\n    input [3:0] DATA_IN,\n    output reg [3:0] DATA_OUT\n);\n"}
+{"task_id": "entry_869", "prompt": "module sky130_fd_sc_lp__a2bb2oi (\n    Y   ,\n    A1_N,\n    A2_N,\n    B1  ,\n    B2\n);\n"}
+{"task_id": "entry_870", "prompt": "module calculator(\n    input [7:0] num1,\n    input [7:0] num2,\n    input [1:0] op_sel,\n    output reg [15:0] result\n);\n"}
+{"task_id": "entry_871", "prompt": "module second_most_significant_bit (\n    input [3:0] data,\n    output q\n);\n"}
+{"task_id": "entry_872", "prompt": "module clock_gate (\n    input  wire CLK,    // Clock signal\n    input  wire EN,     // Enable signal\n    input  wire TE,     // Transparent enable\n    output wire ENCLK   // Gated clock or pass-through enable\n);\n"}
+{"task_id": "entry_874", "prompt": "module and_gate (\n    input a,\n    input b,\n    output out\n);\n"}
+{"task_id": "entry_875", "prompt": "module register #(\n    parameter DATA_WIDTH = 8  // Parameterizable data width\n)(\n    input wire                  clk,      // Clock input\n    input wire                  rst,      // Synchronous reset (active high)\n    input wire [DATA_WIDTH-1:0] data_in,  // Data input\n    input wire                  enable,   // Enable input\n    output reg [DATA_WIDTH-1:0] data_out  // Data output\n);\n"}
+{"task_id": "entry_876", "prompt": "module comparator (\n  input [3:0] A,\n  input [3:0] B,\n  output reg out_greater,\n  output reg out_equal,\n  output reg out_less\n);\n"}
+{"task_id": "entry_877", "prompt": "module and_gate (\n    input a,\n    input b,\n    output c\n);\n"}
+{"task_id": "entry_880", "prompt": "module sky130_fd_sc_lp__a32o (\n    X ,\n    A1,\n    A2,\n    A3,\n    B1,\n    B2\n);\n"}
+{"task_id": "entry_881", "prompt": "module flip_flop (\n    input CLK,\n    input D,\n    input RST,\n    input EN,\n    output reg Q\n);\n"}
+{"task_id": "entry_884", "prompt": "module mux_4to1_2bit_select (\n  input [7:0] in0,\n  input [7:0] in1,\n  input [7:0] in2,\n  input [7:0] in3,\n  input [1:0] sel,\n  output reg [7:0] out\n);\n"}
+{"task_id": "entry_885", "prompt": "module mux_2to1 (\n    input [1:0] in,\n    input sel,\n    output reg out\n);\n"}
+{"task_id": "entry_886", "prompt": "module mux_4to1_enable (\n    input [7:0] D0,\n    input [7:0] D1,\n    input [7:0] D2,\n    input [7:0] D3,\n    input [1:0] SEL,\n    input EN,\n    output reg [7:0] Y\n);\n"}

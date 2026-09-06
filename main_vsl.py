@@ -423,11 +423,42 @@ def _grading_worker(problem: dict, completion: str, timeout: float, result) -> N
         with open("{}.sv".format(problem["task_id"]), "w") as f:
             f.write(verilog_test)
 
+        # The testbench's own top-level module name is usually "tb" (true
+        # for VerilogEval), but not always -- e.g. RTLLM testbenches are
+        # named "<task>_tb" (barrel_shifter_tb, lfsr_tb, ...). Detect it
+        # from the testbench source instead of assuming "tb", so datasets
+        # with a different naming convention don't fail to compile purely
+        # because iverilog was told to look for a module that isn't there.
+        # Falls back to "tb" (the previous hardcoded behavior) if nothing
+        # is found, so VerilogEval's actual "tb" testbenches are unaffected.
+        # A testbench file can declare several modules (e.g. VerilogEval's
+        # test field defines a "reference_module" and a "stimulus_gen"
+        # helper BEFORE its actual top-level "tb" module). Two things to
+        # get right here:
+        #  (1) Anchor the match to the START of a line -- a naive
+        #      "\bmodule\s+(\w+)" also matches plain-English comments
+        #      like "// Instantiate the module\n    RAM uut (...)", where
+        #      "module" is followed by a newline and then an unrelated
+        #      identifier on the next line, producing a false module name.
+        #  (2) Prefer a module literally named "tb" if one exists anywhere
+        #      (covers VerilogEval, whose real testbench is declared last);
+        #      otherwise take the FIRST real module declaration, since in
+        #      every other convention seen (RTLLM) the outer testbench is
+        #      declared first, with any helper/checker module declared
+        #      after it.
+        _tb_matches = _re.findall(r"^\s*module\s+(\w+)", problem["test"], _re.MULTILINE)
+        if "tb" in _tb_matches:
+            _tb_top = "tb"
+        elif _tb_matches:
+            _tb_top = _tb_matches[0]
+        else:
+            _tb_top = "tb"
+
         try:
             with swallow_io():
                 with time_limit(timeout):
                     cmd = ("iverilog -Wall -Winfloop -Wno-timescale -g2012 "
-                           "-s tb -o test.vvp {}.sv; vvp -n test.vvp".format(problem["task_id"]))
+                           "-s {} -o test.vvp {}.sv; vvp -n test.vvp".format(_tb_top, problem["task_id"]))
                     p = _subprocess.Popen(cmd, shell=True, stdout=_subprocess.PIPE, stderr=_subprocess.PIPE)
                     timer = _Timer(timeout, p.kill)
                     try:
@@ -455,6 +486,17 @@ def _grading_worker(problem: dict, completion: str, timeout: float, result) -> N
                             result.append(("passed", out, err, vcd_text))
                         else:
                             result.append((f"failed: {cor} out of {tot} samples.", out, err, vcd_text))
+                    elif _re.search(r"\bDesign\s+Passed\b", out, _re.IGNORECASE):
+                        # Some datasets (e.g. RTLLM) don't use VerilogEval's
+                        # "Mismatches: X in Y samples" convention -- their
+                        # testbenches self-report via their own $display
+                        # wording instead (RTLLM consistently prints
+                        # "...Design Passed..." only when its internal error
+                        # counter is exactly 0, and a different message
+                        # otherwise). Reaching this line means the
+                        # simulation compiled and ran to completion and
+                        # explicitly reported success.
+                        result.append(("passed", out, err, vcd_text))
                     elif "syntax error" in err:
                         result.append(("failed: syntax error.", out, err, vcd_text))
                     elif len(err) > 0:

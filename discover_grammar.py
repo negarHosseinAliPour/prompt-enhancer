@@ -273,10 +273,14 @@ def summarize_test_results(test_results: dict, sample: list[dict], max_failures_
     for f in test_results["failures"][:max_failures_shown]:
         ex = by_id.get(f["task_id"], {})
         desc = (ex.get("description") or "")[:300]
-        lines.append(
+        attempted_vsl = (f.get("vsl_text") or "")[:500]
+        entry = (
             f"- task {f['task_id']} failed at stage '{f['stage']}': {f['error']}\n"
             f"  description: {desc}"
         )
+        if attempted_vsl.strip():
+            entry += f"\n  VSL it actually wrote (this is WRONG -- do not repeat this pattern):\n  {attempted_vsl}"
+        lines.append(entry)
     return "\n".join(lines)
 
 
@@ -292,6 +296,7 @@ async def run_discovery(
     test_problem_file: Path | None = None,
     test_problems_raw: Path | None = None,
     seed: int = 0,
+    reference_size: int = 40,
 ):
     examples = load_successful_examples(history_path)
     print(f"Loaded {len(examples)} successful (description, VSL) examples from {history_path}")
@@ -351,7 +356,7 @@ async def run_discovery(
     rounds_path = output_path.with_suffix(".rounds.jsonl")
     rounds_path.write_text("", encoding="utf-8")
 
-    reference_set = rng.sample(examples, min(40, len(examples)))
+    reference_set = rng.sample(examples, min(reference_size, len(examples)))
 
     grammar_text = None
     reasoning = "Initial proposal, no prior feedback yet."
@@ -456,11 +461,13 @@ def main(
     sample_size: int = typer.Option(150, help="Number of descriptions to test each candidate grammar against, per round."),
     output: Path = typer.Option(Path("discovered_grammar.txt"), help="Where to write the final grammar text."),
     seed: int = typer.Option(0, help="Random seed for sampling, for reproducibility."),
+    reference_size: int = typer.Option(40, help="Number of (description, VSL) reference examples sampled from --history and shown to the discovery agent each round, for more variety in what it few-shots against."),
 ):
     asyncio.run(run_discovery(
         history, rounds, sample_size, problems, output,
         test_history_path=test_history, test_problem_file=test_problems,
         test_problems_raw=test_problems_raw, seed=seed,
+        reference_size=reference_size,
     ))
 
 
