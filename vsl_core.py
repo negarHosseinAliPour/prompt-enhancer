@@ -458,6 +458,24 @@ def _parse_operand(token: str, extra_ops: Optional[list] = None) -> OperandRef:
     if _SIZED_CONST_RE.match(token):
         return OperandRef(raw_verilog=token)
 
+    # bit-select on a parenthesized expression, e.g. (A * B)[7:0] or
+    # (a+b)[3]. Every bit-select pattern below only matches when the part
+    # before '[' is a bare signal name (\w+) -- Verilog itself is fine
+    # indexing an arbitrary expression, but keeping that restriction here
+    # keeps the rest of this function simple and unambiguous. Rather than
+    # rejecting the expression case outright, reuse the same trick already
+    # used a few lines up for a complex concatenation member: extract the
+    # parenthesized expression into a fresh named COMB signal via
+    # _parse_expression, then bit-select THAT signal instead, which the
+    # patterns below already support.
+    m = re.match(r"^\((.+)\)(\[.+\])$", token)
+    if m and extra_ops is not None:
+        inner_expr, bit_suffix = m.group(1).strip(), m.group(2)
+        aux_name = _next_aux_signal()
+        aux_op = _parse_expression(aux_name, inner_expr, extra_ops=extra_ops)
+        extra_ops.append(aux_op)
+        return _parse_operand(f"{aux_name}{bit_suffix}", extra_ops=extra_ops)
+
     # bit range: foo[7:0]
     m = re.match(r"^(\w+)\[(\d+):(\d+)\]$", token)
     if m:
@@ -937,6 +955,30 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
                 value_signal_bit_index=value_signal_bit_index,
                 value_signal_bit_range=value_signal_bit_range,
             )
+
+    # No comparison operator found at all -- e.g. a bare 'out[7]' or 'busy'
+    # used as its own boolean condition, the common Verilog/C convention
+    # for "this bit/signal is truthy" (implicitly != 0), rather than an
+    # explicit 'out[7]==1'. The loop above never matches this since there's
+    # no comparison token to split on. Recognize the same signal/bit-index/
+    # bit-range shapes as above and default the comparison to NEQ 0, rather
+    # than rejecting a condition form that's completely unambiguous.
+    m = re.match(r"^(\w+)\[(\d+):(\d+)\]$", term_text)
+    if m:
+        return SimpleCondition(
+            signal=m.group(1), bit_range=(int(m.group(2)), int(m.group(3))),
+            comparison=ComparisonKind.NEQ, value=0,
+        )
+    m = re.match(r"^(\w+)\[(\d+)\]$", term_text)
+    if m:
+        return SimpleCondition(
+            signal=m.group(1), bit_index=int(m.group(2)),
+            comparison=ComparisonKind.NEQ, value=0,
+        )
+    m = re.match(r"^\w+$", term_text)
+    if m:
+        return SimpleCondition(signal=term_text, comparison=ComparisonKind.NEQ, value=0)
+
     raise VSLParseError(f"Cannot parse condition term '{term_text}'")
 
 

@@ -451,10 +451,38 @@ def parse_pass_fraction(error_message: str) -> float:
         if total > 0:
             return round((total - mismatches) / total, 4)
 
-    if "timeout" in msg or "timed out" in msg:
-        return 0.15
+    # RTLLM testbenches don't use VerilogEval's "failed: N out of M
+    # samples" wording -- they self-report via their own $display calls,
+    # e.g. "Test completed with 11/20 failures", "7 / 100 failures",
+    # "3/16 NUM_DIV cases failing". All of these share the same shape: a
+    # failure count, then a slash, then a total. Catch that shape
+    # directly so these tasks get a real (total-mismatches)/total score
+    # instead of falling through to the flat fallback below.
+    match = re.search(r"(\d+)\s*/\s*(\d+)\s*(?:\w+\s+)*(?:failures?|failing|cases)", msg)
+    if match:
+        mismatches, total = int(match.group(1)), int(match.group(2))
+        if total > 0 and mismatches <= total:
+            return round((total - mismatches) / total, 4)
 
-    return 0.3
+    if "timeout" in msg or "timed out" in msg:
+        # A timeout means the simulation never finished and never
+        # reported a pass -- same status as any other confirmed failure,
+        # so it gets the same score (0.0) instead of an arbitrary
+        # in-between constant with no measurement behind it.
+        return 0.0
+
+    # We reach here only when the run compiled, executed, and explicitly
+    # reported a failure (error/mismatch count > 0), but the message
+    # didn't carry a usable "N out of M" fraction -- e.g. RTLLM
+    # testbenches like ROM/barrel_shifter/clkgenerator that only print
+    # "Test completed with N errors." with no total. There is no honest
+    # way to turn that into a partial score: we don't know how many
+    # checks were run, so any number strictly between 0 and 1 would be
+    # invented, not measured. The one thing we DO know for certain is
+    # that the design failed -- so this is scored the same as a
+    # confirmed compile/syntax failure (0.0) instead of a fabricated
+    # flat constant.
+    return 0.0
 
 
 def _grading_worker(problem: dict, completion: str, timeout: float, result) -> None:
@@ -484,6 +512,20 @@ def _grading_worker(problem: dict, completion: str, timeout: float, result) -> N
         verilog_test = problem["test"] + "\n" + problem["prompt"] + "\n" + completion
         with open("{}.sv".format(problem["task_id"]), "w") as f:
             f.write(verilog_test)
+
+        # A few RTLLM testbenches $readmemh() a reference-data file from
+        # their own working directory (e.g. asyn_fifo needs wfull.txt/
+        # rempty.txt/tdata.txt, alu needs reference.dat) instead of
+        # encoding all expected values inline. Without these files the
+        # simulation dies on "Unable to open ... for reading" before it
+        # ever checks the design's correctness, which would otherwise
+        # score every completion 0.0 regardless of quality. If the
+        # problem dict carries an "aux_files" map (filename -> contents),
+        # write each one into this same temp sim directory before
+        # compiling, so $readmemh finds it via its relative path.
+        for _aux_name, _aux_contents in problem.get("aux_files", {}).items():
+            with open(_aux_name, "w") as _f:
+                _f.write(_aux_contents)
 
         # The testbench's own top-level module name is usually "tb" (true
         # for VerilogEval), but not always -- e.g. RTLLM testbenches are
@@ -564,7 +606,24 @@ def _grading_worker(problem: dict, completion: str, timeout: float, result) -> N
                     elif len(err) > 0:
                         result.append(("failed: compile error.", out, err, vcd_text))
                     else:
-                        result.append(("failed: info string not matched.", out, err, vcd_text))
+                        # RTLLM testbenches that don't report success also
+                        # don't use "Mismatches: X in Y samples" -- they
+                        # print things like "Test completed with 11/20
+                        # failures" or "3/16 NUM_DIV cases failing" via
+                        # their own $display calls. Forward that N/M
+                        # fraction through verbatim (instead of collapsing
+                        # it to a generic "info string not matched"
+                        # message) so parse_pass_fraction() can turn it
+                        # into a real continuous score rather than its
+                        # flat fallback.
+                        _frac_match = _re.search(
+                            r"(\d+)\s*/\s*(\d+)\s*(?:\w+\s+)*(?:failures?|failing|cases)",
+                            out, _re.IGNORECASE,
+                        )
+                        if _frac_match:
+                            result.append((f"failed: {_frac_match.group(0)}", out, err, vcd_text))
+                        else:
+                            result.append(("failed: info string not matched.", out, err, vcd_text))
         except TimeoutException:
             result.append(("timed out", "", "", ""))
         except BaseException as e:
@@ -1107,7 +1166,7 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
 
 app = typer.Typer(help="Prompt enhancer with shaped-reward scoring across revision rounds.")
 
-async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir: bool = False, force_vsl: bool = False, concurrency: int = (2 if os.environ.get("VSL_MODEL") == "gpt-oss" else 6), eval_file: pathlib.Path = pathlib.Path("outputs/VerilogEval_Machine_mutated_large.jsonl"), label: str | None = None):
+async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir: bool = False, force_vsl: bool = False, concurrency: int = (2 if os.environ.get("VSL_MODEL") == "gpt-oss" else 6), eval_file: pathlib.Path = pathlib.Path("outputs/VerilogEval_Machine_mutated_large.jsonl"), label: str | None = None, output_dir: pathlib.Path = pathlib.Path("outputs")):
     if not jsonl_file.exists():
         print(f"Error: File '{jsonl_file}' not found.")
         raise typer.Exit(code=1)
@@ -1124,10 +1183,27 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
             for line in f:
                 if line.strip():
                     data = json.loads(line)
+                    # Some testbenches (e.g. a few RTLLM designs) $readmemh()
+                    # an auxiliary reference-data file from their own working
+                    # directory. Rather than embedding that file's content
+                    # inline in the eval jsonl, "aux_files" stores it as a
+                    # {filename: relative_path} map, kept as real files on
+                    # disk (relative to this eval_file's own directory, e.g.
+                    # datasets/rtllm/aux_files/<task_id>/<filename>) so
+                    # they're inspectable/diffable on their own. Resolve
+                    # them to actual file content once here at load time,
+                    # so _grading_worker (which runs in a separate spawned
+                    # process, possibly with a different cwd) can just write
+                    # the content out without needing to know this path.
+                    if "aux_files" in data:
+                        resolved = {}
+                        for name, rel_path in data["aux_files"].items():
+                            aux_path = (eval_file.parent / rel_path).resolve()
+                            resolved[name] = aux_path.read_text(encoding="utf-8")
+                        data["aux_files"] = resolved
                     eval_problems[data["task_id"]] = data
 
-    output_dir = pathlib.Path("outputs")
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     suffix = ("_vsl" if use_gir else "") + ("_forcevsl" if force_vsl else "")
     output_file = output_dir / f"{mode}{suffix}_samples_{label}.jsonl"
     history_file = output_dir / f"{mode}{suffix}_history_{label}.jsonl"
@@ -1301,8 +1377,16 @@ def main(
               "set -- pass this explicitly for anything else, e.g. a retry "
               "subset, so it doesn't silently overwrite a full run's output."),
     ),
+    output_dir: pathlib.Path = typer.Option(
+        pathlib.Path("outputs"), "--output-dir",
+        help=("Directory samples/history/checkpoints are written into. "
+              "Defaults to 'outputs' (flat, like before). Pass a "
+              "dataset-specific subfolder (e.g. outputs/rtllm, "
+              "outputs/verilogeval_v1) to keep different datasets' runs "
+              "from mixing together in the same directory."),
+    ),
 ):
-    asyncio.run(process_file(jsonl_file, mode=mode, use_gir=use_gir, force_vsl=force_vsl, eval_file=eval_file, label=label))
+    asyncio.run(process_file(jsonl_file, mode=mode, use_gir=use_gir, force_vsl=force_vsl, eval_file=eval_file, label=label, output_dir=output_dir))
 
     """
     Reads prompts from a JSONL file, improves them with agents (using
