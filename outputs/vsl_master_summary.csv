@@ -1,0 +1,4 @@
+dataset,total_tasks,pass_at_1_count,pass_at_1_pct,pass_at_1_avg_score_pct,resolve_count,resolve_rate_pct,resolve_avg_score_pct,improved_count,zero_to_full,zero_to_partial,partial_to_full,partial_to_partial,still_zero_after_pipeline,avg_model_calls,avg_total_tokens,total_tokens_all_tasks,avg_llm_wall_time_s,avg_grading_wall_time_s,avg_total_wall_time_s,avg_retries,avg_num_rounds
+VerilogEval_v2_Baseline,156,147,94.23,97.37,147,94.23,97.37,0,0,0,0,0,1,1.0,2817.436,439520,15.648,22.071,37.719,0.0,1.0
+VerilogEval_v2_ForceVSL_v8,156,135,86.54,91.24,150,96.15,97.19,17,5,1,10,1,4,1.635,11872.679,1852138,42.798,27.661,83.047,0.051,1.301
+RTLLM_Baseline,50,38,76.0,79.35,38,76.0,79.35,0,0,0,0,0,9,1.0,8234.24,411712,46.787,20.135,66.923,0.0,1.0

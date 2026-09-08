@@ -86,21 +86,40 @@ def _new_metrics() -> dict:
     }
 
 
+def _first_present(obj, *names):
+    """Returns the first attribute in `names` that exists on `obj` and is
+    not None, else 0. Different pydantic-ai versions have used different
+    field names for the same concept (request_tokens/input_tokens,
+    response_tokens/output_tokens), so checking a list keeps this working
+    across versions instead of silently reading a missing attribute."""
+    for name in names:
+        val = getattr(obj, name, None)
+        if val is not None:
+            return val
+    return 0
+
+
 def _record_llm_usage(result, elapsed: float) -> None:
     m = _current_metrics.get()
     if m is None:
         return
     m["model_calls"] += 1
     m["llm_wall_time_s"] += elapsed
+    usage = None
     try:
-        usage = result.usage()
+        # Older pydantic-ai exposed usage() as a method; newer versions
+        # (where result.usage is already a RunUsage instance, not
+        # callable) raise TypeError here -- that used to be silently
+        # swallowed by the bare except below, which is exactly why token
+        # counts were always recording as 0 against newer pydantic-ai.
+        usage = result.usage() if callable(result.usage) else result.usage
     except Exception:
         usage = None
     if usage is not None:
-        m["model_requests"] += getattr(usage, "requests", 0) or 0
-        m["request_tokens"] += getattr(usage, "request_tokens", 0) or 0
-        m["response_tokens"] += getattr(usage, "response_tokens", 0) or 0
-        m["total_tokens"] += getattr(usage, "total_tokens", 0) or 0
+        m["model_requests"] += _first_present(usage, "requests")
+        m["request_tokens"] += _first_present(usage, "request_tokens", "input_tokens")
+        m["response_tokens"] += _first_present(usage, "response_tokens", "output_tokens")
+        m["total_tokens"] += _first_present(usage, "total_tokens")
 
 
 async def run_agent_with_retry(agent, agent_input, *, task_id: str | None = None,
@@ -202,7 +221,7 @@ reworded_agent = Agent(
     MODEL,
     name="Reworded Agent",
     output_type=_out(EnhancedPromptOutput),
-    model_settings={"temperature": 0, "max_tokens": 8192},
+    model_settings={"temperature": 0, "max_tokens": 16384},
     retries=3,
     system_prompt=("You are a prompt rewording agent. Your task is to take an original prompt "
         "and reword it to be more structured, adding constraints and improvements "
@@ -237,7 +256,7 @@ score_agent = Agent(
     MODEL,
     name="Score Agent",
     output_type=_out(scoreOutput),
-    model_settings={"temperature": 0, "max_tokens": 8192},
+    model_settings={"temperature": 0, "max_tokens": 16384},
     retries=3,
     system_prompt=("You are a strict judge of reworded prompts. You'll be given the "\
     "original prompt and Revised version rewording of it. Score the Revised version: "\
@@ -253,7 +272,7 @@ reviser_agent = Agent(
     MODEL,
     name="Reviser Agent",
     output_type=_out(RevisedPromptOutput),
-    model_settings={"temperature": 0, "max_tokens": 8192},
+    model_settings={"temperature": 0, "max_tokens": 16384},
     retries=3,
     system_prompt=("You are a prompt revision agent. You'll get the original prompt, "
         "the current version of the prompt, the ACTUAL Verilog code that was "
@@ -305,7 +324,7 @@ execution_agent = Agent(
     MODEL,
     name="Execution Agent",
     output_type=_out(VerilogCodeOutput),
-    model_settings={"temperature": 0, "max_tokens": 8192},
+    model_settings={"temperature": 0, "max_tokens": 16384},
     retries=3,
     system_prompt=(
         "You are an expert Verilog code generator and completion assistant. "
@@ -702,9 +721,9 @@ async def _grade_code(code: str, eval_problem: dict | None, task_id: str | None)
 
         test_result = await asyncio.wait_for(
             asyncio.to_thread(
-                check_correctness_with_details, problem=eval_problem, completion=code, timeout=10.0, completion_id=0
+                check_correctness_with_details, problem=eval_problem, completion=code, timeout=45.0, completion_id=0
             ),
-            timeout=45.0,
+            timeout=80.0,
         )
     except asyncio.TimeoutError:
         if m is not None:
@@ -1166,7 +1185,7 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
 
 app = typer.Typer(help="Prompt enhancer with shaped-reward scoring across revision rounds.")
 
-async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir: bool = False, force_vsl: bool = False, concurrency: int = (2 if os.environ.get("VSL_MODEL") == "gpt-oss" else 6), eval_file: pathlib.Path = pathlib.Path("outputs/VerilogEval_Machine_mutated_large.jsonl"), label: str | None = None, output_dir: pathlib.Path = pathlib.Path("outputs")):
+async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir: bool = False, force_vsl: bool = False, concurrency: int = (2 if os.environ.get("VSL_MODEL") == "gpt-oss" else 3), eval_file: pathlib.Path = pathlib.Path("outputs/VerilogEval_Machine_mutated_large.jsonl"), label: str | None = None, output_dir: pathlib.Path = pathlib.Path("outputs")):
     if not jsonl_file.exists():
         print(f"Error: File '{jsonl_file}' not found.")
         raise typer.Exit(code=1)

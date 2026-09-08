@@ -1,0 +1,18 @@
+{
+  "mode": "baseline",
+  "use_gir": false,
+  "force_vsl": false,
+  "label": "verilogeval_v2_baseline_conwaylife_retry",
+  "num_tasks": 1,
+  "avg_model_calls": 1.0,
+  "avg_model_requests": 1.0,
+  "avg_request_tokens": 994.0,
+  "avg_response_tokens": 8660.0,
+  "avg_total_tokens": 9654.0,
+  "total_tokens_all_tasks": 9654,
+  "avg_llm_wall_time_s": 55.604,
+  "avg_grading_wall_time_s": 51.646,
+  "avg_total_wall_time_s": 107.25,
+  "avg_retries": 0.0,
+  "avg_num_rounds": 1.0
+}

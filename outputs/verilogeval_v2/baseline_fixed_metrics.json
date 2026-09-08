@@ -1,0 +1,14 @@
+{
+  "dataset": "VerilogEval_v2_Baseline",
+  "total_tasks": 156,
+  "pass_at_1": {
+    "passed": 146,
+    "pass@1": 93.59,
+    "avg_score_pct": 96.73
+  },
+  "resolve_rate": {
+    "passed": 146,
+    "resolve_rate": 93.59,
+    "avg_score_pct": 96.73
+  }
+}

@@ -13,6 +13,7 @@ import re
 from enum import Enum
 from typing import Optional
 
+import httpx
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.models.google import GoogleModel
@@ -36,17 +37,34 @@ _GCP_PROJECT_ID = "cs-poc-pjtbxc0qllmcraowi6w1wmi"
 _GCP_REGION = "us-central1"
 
 
-def _get_vertex_access_token():
-    creds, _ = google.auth.default()
-    creds.refresh(google.auth.transport.requests.Request())
-    return creds.token
+class _VertexTokenAuth(httpx.Auth):
+    """Refreshes the Google OAuth access token on demand instead of baking
+    a single short-lived token (~1h) into the client at import time.
+
+    A long-running process (e.g. discover_grammar.py's multi-round,
+    multi-hour discovery loop) that fetched the token once and reused it
+    forever would start failing every request with a 401
+    (ACCESS_TOKEN_TYPE_UNSUPPORTED / expired token) as soon as that single
+    token expired -- exactly the crash seen after round 3 of a 1000-sample,
+    8-round discovery run. This re-checks validity per request and only
+    calls the network refresh when actually needed.
+    """
+
+    def __init__(self):
+        self._creds, _ = google.auth.default()
+
+    def auth_flow(self, request):
+        if not self._creds.valid:
+            self._creds.refresh(google.auth.transport.requests.Request())
+        request.headers["Authorization"] = f"Bearer {self._creds.token}"
+        yield request
 
 
 MODEL_GPT_OSS = OpenAIChatModel(
     "openai/gpt-oss-120b-maas",
     provider=OpenAIProvider(
         base_url=f"https://{_GCP_REGION}-aiplatform.googleapis.com/v1/projects/{_GCP_PROJECT_ID}/locations/{_GCP_REGION}/endpoints/openapi",
-        api_key=_get_vertex_access_token(),
+        http_client=httpx.AsyncClient(auth=_VertexTokenAuth()),
     ),
 )
 
@@ -207,6 +225,14 @@ class SimpleCondition(BaseModel):
     )
     value_signal_bit_index: Optional[int] = None
     value_signal_bit_range: Optional[tuple[int, int]] = None
+    value_raw_verilog: Optional[str] = Field(
+        None,
+        description="For a comparison against a computed expression, e.g. "
+                    "'cnt = ((NUM_DIV>>1)-1)' -- neither a plain constant "
+                    "nor a plain signal reference. Passed through to the "
+                    "renderer verbatim as the right-hand side; overrides "
+                    "both 'value' and 'value_signal' when set."
+    )
 
 
 class Condition(BaseModel):
@@ -909,6 +935,7 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
         value_signal: Optional[str] = None
         value_signal_bit_index: Optional[int] = None
         value_signal_bit_range: Optional[tuple[int, int]] = None
+        value_raw_verilog: Optional[str] = None
         try:
             value = _resolve_value(rhs)
         except VSLParseError:
@@ -917,6 +944,13 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
                 value_signal = ref_signal
                 value_signal_bit_index = ref_bit_index
                 value_signal_bit_range = ref_bit_range
+                value = 0
+            elif re.match(r"^[\w\s()+\-*/<>&|^~]+$", rhs) and re.search(r"[+\-*/<>&|^~]", rhs):
+                # A computed expression (arithmetic/bitwise), not a plain
+                # constant or signal -- e.g. 'cnt = ((NUM_DIV>>1)-1)' where
+                # NUM_DIV is a module parameter. Pass it through verbatim
+                # rather than rejecting it; the renderer emits it as-is.
+                value_raw_verilog = rhs
                 value = 0
             else:
                 raise VSLParseError(f"Cannot resolve right-hand side '{rhs}' in condition '{term_text}'")
@@ -930,6 +964,7 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
                 comparison=comparison, value=value, value_signal=value_signal,
                 value_signal_bit_index=value_signal_bit_index,
                 value_signal_bit_range=value_signal_bit_range,
+                value_raw_verilog=value_raw_verilog,
             )
 
         m = re.match(r"^(\w+)\[(\d+):(\d+)\]$", lhs)
@@ -939,6 +974,7 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
                 comparison=comparison, value=value, value_signal=value_signal,
                 value_signal_bit_index=value_signal_bit_index,
                 value_signal_bit_range=value_signal_bit_range,
+                value_raw_verilog=value_raw_verilog,
             )
         m = re.match(r"^(\w+)\[(\d+)\]$", lhs)
         if m:
@@ -947,6 +983,7 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
                 comparison=comparison, value=value, value_signal=value_signal,
                 value_signal_bit_index=value_signal_bit_index,
                 value_signal_bit_range=value_signal_bit_range,
+                value_raw_verilog=value_raw_verilog,
             )
         m = re.match(r"^\w+$", lhs)
         if m:
@@ -954,6 +991,7 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
                 signal=lhs, comparison=comparison, value=value, value_signal=value_signal,
                 value_signal_bit_index=value_signal_bit_index,
                 value_signal_bit_range=value_signal_bit_range,
+                value_raw_verilog=value_raw_verilog,
             )
 
     # No comparison operator found at all -- e.g. a bare 'out[7]' or 'busy'
@@ -978,6 +1016,28 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
     m = re.match(r"^\w+$", term_text)
     if m:
         return SimpleCondition(signal=term_text, comparison=ComparisonKind.NEQ, value=0)
+
+    # Same bare-truthy shapes as above, but negated: '~wfull', '~busy[3]',
+    # '~busy[7:0]' -- the common "this signal is false/empty" condition
+    # (e.g. 'winc & ~wfull' meaning "write enabled and not full"). Mirrors
+    # the NEQ-0 fallback just above but as EQ 0.
+    if term_text.startswith("~"):
+        negated = term_text[1:].strip()
+        m = re.match(r"^(\w+)\[(\d+):(\d+)\]$", negated)
+        if m:
+            return SimpleCondition(
+                signal=m.group(1), bit_range=(int(m.group(2)), int(m.group(3))),
+                comparison=ComparisonKind.EQ, value=0,
+            )
+        m = re.match(r"^(\w+)\[(\d+)\]$", negated)
+        if m:
+            return SimpleCondition(
+                signal=m.group(1), bit_index=int(m.group(2)),
+                comparison=ComparisonKind.EQ, value=0,
+            )
+        m = re.match(r"^\w+$", negated)
+        if m:
+            return SimpleCondition(signal=negated, comparison=ComparisonKind.EQ, value=0)
 
     raise VSLParseError(f"Cannot parse condition term '{term_text}'")
 
@@ -1289,27 +1349,92 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
             sig = signals_seen.get(token)
             if sig is not None:
                 return sig.width
+            # not registered yet (e.g. a module port only referenced here,
+            # inside a concat/replication, and nowhere else earlier) --
+            # fall back to its declared interface width instead of
+            # silently guessing 1, which corrupts any concat width sum
+            if token in port_widths:
+                return port_widths[token]
         return 1
 
     def _infer_op_width(op: Operation) -> int:
         """Infers an aux signal's width as the widest operand referenced
         in its Operation, so a ternary/binary-op result (e.g. picking
         between two 8-bit signals) isn't left at the default 1-bit width,
-        which would silently truncate it in the rendered Verilog."""
+        which would silently truncate it in the rendered Verilog.
+
+        A bit-select or bit-range on the operand (out_r[3], out_r[7:4])
+        narrows the operand down to that many bits -- it must NOT be
+        widened back to the parent signal's full width, or a reduction
+        like out_r[3]^out_r[2] gets zero-extended to the parent's width
+        before a following unary op (e.g. ~) inverts all those padding
+        bits too, corrupting the result.
+        """
         best = 1
         for operand in op.operands:
             if operand.raw_verilog is not None:
                 best = max(best, _estimate_raw_verilog_width(operand.raw_verilog))
+                continue
+            if operand.bit_range is not None:
+                hi, lo = operand.bit_range
+                best = max(best, abs(hi - lo) + 1)
+                continue
+            if operand.bit_index is not None or operand.dynamic_bit_index is not None:
+                best = max(best, 1)
                 continue
             if not operand.signal:
                 continue
             sig = signals_seen.get(operand.signal)
             if sig is not None:
                 best = max(best, sig.width)
+            elif operand.signal in port_widths:
+                best = max(best, port_widths[operand.signal])
         return best
 
 
-    lines = [ln for ln in text.strip().splitlines() if ln.strip() and not ln.strip().startswith("#")]
+    # '#' has no meaning anywhere else in VSL (no delay syntax, no string
+    # literals), so it's unambiguously a comment marker whether it starts
+    # the line or trails after real content on it (e.g. "SP=0 -> 0   # full, hold").
+    # Strip a trailing "# ..." before the existing full-comment-line filter,
+    # so a trailing comment on a COMB branch doesn't get parsed as part of
+    # the branch's result value.
+    def _strip_trailing_comment(ln: str) -> str:
+        idx = ln.find("#")
+        return ln[:idx] if idx != -1 else ln
+
+    lines = [
+        _strip_trailing_comment(ln).rstrip()
+        for ln in text.strip().splitlines()
+        if ln.strip() and not ln.strip().startswith("#")
+    ]
+    lines = [ln for ln in lines if ln.strip()]
+
+    # Join a statement that the model wrapped across multiple physical
+    # lines because the expression got long, e.g.:
+    #   COMB next_wfull
+    #     * -> ((wptr[3] ^ rptr_sync1[3]) & (wptr[2] ^ rptr_sync1[2]) &
+    #           ~(wptr[1] ^ rptr_sync1[1]) & ~(wptr[0] ^ rptr_sync1[0]))
+    # VSL is otherwise one-statement-per-line, but nothing in the grammar
+    # forbids this and it's a natural thing to write for a long boolean
+    # chain. Detected purely by bracket balance -- '(', '{', '[' opened on
+    # one line and not yet closed -- so a normal '| cond -> result' line
+    # (always balanced on its own) is never affected.
+    def _bracket_delta(ln: str) -> int:
+        return sum(1 for ch in ln if ch in "([{") - sum(1 for ch in ln if ch in ")]}")
+
+    joined_lines: list[str] = []
+    pending = ""
+    depth = 0
+    for ln in lines:
+        pending = f"{pending} {ln}".strip() if pending else ln
+        depth += _bracket_delta(ln)
+        if depth <= 0:
+            joined_lines.append(pending)
+            pending = ""
+            depth = 0
+    if pending:
+        joined_lines.append(pending)
+    lines = joined_lines
 
     i = 0
     while i < len(lines):
@@ -1482,6 +1607,14 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
                         _ensure_signal(operand.signal)
                 comb_branches.append(PriorityBranch(condition=condition, result_op=result_op))
                 i += 1
+
+            if comb_target not in port_widths:
+                inferred_widths = [
+                    w for w in (_infer_op_width(b.result_op) for b in comb_branches)
+                    if w
+                ]
+                if inferred_widths:
+                    signals_seen[comb_target].width = max(inferred_widths)
 
             ir.comb_blocks.append(CombBlock(
                 target_signal=comb_target,
@@ -1656,7 +1789,17 @@ def validate_circuit(ir: CircuitIR) -> list[str]:
     comb_targets_declared |= {
         op.target for op in ir.combinational_ops if op.target
     }
-    missing_comb_blocks = next_signals_expected - comb_targets_declared
+    # A register's NEXT= target doesn't always need its own COMB block: it's
+    # legitimate VSL for one register to directly chain off another
+    # register's current value every edge (e.g. a 2-stage synchronizer:
+    # REG sync1 NEXT=sync0 / REG sync0 NEXT=some_comb). The renderer already
+    # handles this correctly -- it just emits 'reg <= next_signal;' verbatim,
+    # which is valid Verilog whether next_signal is a COMB-driven wire or
+    # another register's output. Only require an explicit COMB block when
+    # NEXT= points at something that isn't itself a register target, since
+    # that's the case that would otherwise reference an undefined wire.
+    register_targets_declared = {ru2.target_register for ru2 in ir.register_updates}
+    missing_comb_blocks = next_signals_expected - comb_targets_declared - register_targets_declared
     if missing_comb_blocks:
         problems.append(f"REG uses NEXT= for {missing_comb_blocks} but no matching COMB block was found")
 
@@ -1826,7 +1969,9 @@ def _simple_condition_to_verilog(term: SimpleCondition, rename_map: Optional[dic
             lhs = f"{signal}[{hi}:{lo}]"
         else:
             lhs = signal
-    if term.value_signal is not None:
+    if term.value_raw_verilog is not None:
+        rhs = term.value_raw_verilog
+    elif term.value_signal is not None:
         rhs_signal = rename_map.get(term.value_signal, term.value_signal)
         if term.value_signal_bit_index is not None:
             rhs = f"{rhs_signal}[{term.value_signal_bit_index}]"
@@ -2016,8 +2161,25 @@ def render_verilog(ir: CircuitIR) -> str:
 
         if ru.next_signal is not None:
             # 'state, next' pattern: state simply latches next every edge.
-            # A sync reset here still needs its own check inside the body.
-            if is_sync_reset:
+            # If the COMB block driving next_signal already has a branch that
+            # conditions on this register's own reset_signal, that COMB has
+            # already fully computed the correct reset-case value -- forcing
+            # a second, hardcoded 'if (reset) reg <= reset_value;' here would
+            # silently override that computed value with the REG line's
+            # literal reset_value whenever the two differ, producing wrong
+            # hardware (e.g. a register whose real reset output is nonzero
+            # but whose REG declaration used the common 'reset.sync->0'
+            # boilerplate). So only add the extra sync-reset branch when the
+            # feeding COMB block does NOT already branch on reset_signal.
+            next_comb = next((cb for cb in ir.comb_blocks if cb.target_signal == ru.next_signal), None)
+            comb_handles_reset = bool(
+                is_sync_reset and next_comb and any(
+                    branch.condition is not None
+                    and any(term.signal == ru.reset_signal for term in branch.condition.terms)
+                    for branch in next_comb.branches
+                )
+            )
+            if is_sync_reset and not comb_handles_reset:
                 lines.append(f"{indent}if ({sync_reset_check})")
                 lines.append(f"{indent}    {render_target} <= {ru.reset_value};")
                 lines.append(f"{indent}else")
@@ -2133,6 +2295,81 @@ def diff_circuit_ir(old: CircuitIR, new: CircuitIR) -> list[str]:
                     f"from {ob.result_op.op} to {nb.result_op.op}"
                 )
 
+    def _op_key(op: "Operation"):
+        """A comparable snapshot of an Operation's actual logic (what it
+        computes and from what), ignoring aux-signal names that the parser
+        invents fresh on every parse and would otherwise look like a
+        'change' even when the expression is identical."""
+        return (
+            op.target, tuple(op.target_concat) if op.target_concat else None,
+            op.target_bit_index, op.target_bit_range, op.op,
+            tuple(
+                (o.signal, o.bit_index, o.bit_range, o.dynamic_bit_index, o.raw_verilog)
+                for o in op.operands
+            ),
+            op.const_value, op.const_is_x,
+        )
+
+    # combinational_ops: plain 'signal = expr' assignments outside a REG or
+    # COMB block (e.g. 'sum = A + B'). This -- along with comb_blocks right
+    # below -- was previously never compared at all, meaning any purely
+    # combinational design (adders, multipliers, ALUs, comparators, muxes)
+    # got NO structural feedback from a revision, no matter how much its
+    # logic actually changed: only register_updates was ever diffed here,
+    # so the revision loop's "structural_note" silently defaulted to
+    # "No structural change detected" for every non-register edit.
+    old_comb_ops = {op.target or tuple(op.target_concat or []): op for op in old.combinational_ops}
+    new_comb_ops = {op.target or tuple(op.target_concat or []): op for op in new.combinational_ops}
+
+    for key in set(old_comb_ops) | set(new_comb_ops):
+        old_op = old_comb_ops.get(key)
+        new_op = new_comb_ops.get(key)
+        label = key if isinstance(key, str) else "{" + ", ".join(key) + "}"
+
+        if old_op is None:
+            changes.append(f"combinational signal '{label}': added")
+        elif new_op is None:
+            changes.append(f"combinational signal '{label}': removed")
+        elif _op_key(old_op) != _op_key(new_op):
+            changes.append(f"combinational signal '{label}': expression changed")
+
+    # comb_blocks: priority/case-style combinational logic (e.g. an ALU's
+    # opcode mux, or FSM next-state logic) -- same branch/condition shape
+    # as register_updates.branches, just driving a wire instead of a reg.
+    old_blocks = {cb.target_signal: cb for cb in old.comb_blocks}
+    new_blocks = {cb.target_signal: cb for cb in new.comb_blocks}
+
+    def _cond_key(cond):
+        if cond is None:
+            return None
+        return tuple(
+            (t.signal, t.bit_index, t.bit_range, t.comparison, t.value, t.value_signal)
+            for t in cond.terms
+        )
+
+    for target in set(old_blocks) | set(new_blocks):
+        old_cb = old_blocks.get(target)
+        new_cb = new_blocks.get(target)
+
+        if old_cb is None:
+            changes.append(f"combinational block '{target}': added")
+            continue
+        if new_cb is None:
+            changes.append(f"combinational block '{target}': removed")
+            continue
+
+        old_conditions = [_cond_key(b.condition) for b in old_cb.branches]
+        new_conditions = [_cond_key(b.condition) for b in new_cb.branches]
+        if old_conditions != new_conditions:
+            changes.append(
+                f"combinational block '{target}': branch/priority order changed "
+                f"from {old_conditions} to {new_conditions}"
+            )
+
+        for i, (ob, nb) in enumerate(zip(old_cb.branches, new_cb.branches)):
+            if _op_key(ob.result_op) != _op_key(nb.result_op):
+                changes.append(f"combinational block '{target}' branch {i}: result expression changed")
+
     old_sig_ids = {s.id for s in old.signals}
     new_sig_ids = {s.id for s in new.signals}
 
@@ -2179,6 +2416,6 @@ gir_agent = Agent(
     MODEL,
     name="GIR Agent",
     output_type=_gir_output_type,
-    model_settings={"temperature": 0, "max_tokens": 8192},
+    model_settings={"temperature": 0, "max_tokens": 16384},
     system_prompt=VSL_GRAMMAR_AND_EXAMPLES,
 )
