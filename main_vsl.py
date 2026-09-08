@@ -49,20 +49,7 @@ def _is_retryable_error(exc: Exception) -> bool:
     return any(marker in text for marker in _RETRYABLE_MARKERS)
 
 
-#--per-task metrics: token usage, wall-clock time, model-request counts, and
-# retry counts, so runs can be compared on more than pass/fail. Answers the
-# boss's question ("is VSL for correctness or for debugging?") by making it
-# possible to compare force-vsl vs. plain/no-vsl runs on cost (tokens, time,
-# number of model calls), not just on pass rate.
-#
-# Implemented with a ContextVar instead of threading a `metrics` parameter
-# through every function, since asyncio.Task copies the context at creation
-# time -- each concurrent task in process_file's asyncio.gather(...) gets
-# its own isolated accumulator automatically, with no risk of one task's
-# concurrent calls polluting another's counts. Any function outside
-# process_file's per-task scope (e.g. a bare `agent.run()` call from a
-# script) just sees None and skips recording -- this is purely additive,
-# it changes no existing behavior or return values.
+
 _current_metrics: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
     "_current_metrics", default=None
 )
@@ -70,12 +57,8 @@ _current_metrics: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
 
 def _new_metrics() -> dict:
     return {
-        "model_calls": 0,        # successful run_agent_with_retry() calls
-        "model_requests": 0,     # sum of Usage().requests -- actual HTTP calls to the
-                                  # model, including pydantic-ai's own internal retries
-                                  # to satisfy structured-output validation (the closest
-                                  # thing to a "tool call" count in this pipeline, since
-                                  # none of these agents invoke external tools)
+        "model_calls": 0,        
+        "model_requests": 0,     
         "request_tokens": 0,
         "response_tokens": 0,
         "total_tokens": 0,
@@ -470,13 +453,7 @@ def parse_pass_fraction(error_message: str) -> float:
         if total > 0:
             return round((total - mismatches) / total, 4)
 
-    # RTLLM testbenches don't use VerilogEval's "failed: N out of M
-    # samples" wording -- they self-report via their own $display calls,
-    # e.g. "Test completed with 11/20 failures", "7 / 100 failures",
-    # "3/16 NUM_DIV cases failing". All of these share the same shape: a
-    # failure count, then a slash, then a total. Catch that shape
-    # directly so these tasks get a real (total-mismatches)/total score
-    # instead of falling through to the flat fallback below.
+
     match = re.search(r"(\d+)\s*/\s*(\d+)\s*(?:\w+\s+)*(?:failures?|failing|cases)", msg)
     if match:
         mismatches, total = int(match.group(1)), int(match.group(2))
@@ -484,23 +461,9 @@ def parse_pass_fraction(error_message: str) -> float:
             return round((total - mismatches) / total, 4)
 
     if "timeout" in msg or "timed out" in msg:
-        # A timeout means the simulation never finished and never
-        # reported a pass -- same status as any other confirmed failure,
-        # so it gets the same score (0.0) instead of an arbitrary
-        # in-between constant with no measurement behind it.
+
         return 0.0
 
-    # We reach here only when the run compiled, executed, and explicitly
-    # reported a failure (error/mismatch count > 0), but the message
-    # didn't carry a usable "N out of M" fraction -- e.g. RTLLM
-    # testbenches like ROM/barrel_shifter/clkgenerator that only print
-    # "Test completed with N errors." with no total. There is no honest
-    # way to turn that into a partial score: we don't know how many
-    # checks were run, so any number strictly between 0 and 1 would be
-    # invented, not measured. The one thing we DO know for certain is
-    # that the design failed -- so this is scored the same as a
-    # confirmed compile/syntax failure (0.0) instead of a fabricated
-    # flat constant.
     return 0.0
 
 
@@ -532,43 +495,12 @@ def _grading_worker(problem: dict, completion: str, timeout: float, result) -> N
         with open("{}.sv".format(problem["task_id"]), "w") as f:
             f.write(verilog_test)
 
-        # A few RTLLM testbenches $readmemh() a reference-data file from
-        # their own working directory (e.g. asyn_fifo needs wfull.txt/
-        # rempty.txt/tdata.txt, alu needs reference.dat) instead of
-        # encoding all expected values inline. Without these files the
-        # simulation dies on "Unable to open ... for reading" before it
-        # ever checks the design's correctness, which would otherwise
-        # score every completion 0.0 regardless of quality. If the
-        # problem dict carries an "aux_files" map (filename -> contents),
-        # write each one into this same temp sim directory before
-        # compiling, so $readmemh finds it via its relative path.
+
         for _aux_name, _aux_contents in problem.get("aux_files", {}).items():
             with open(_aux_name, "w") as _f:
                 _f.write(_aux_contents)
 
-        # The testbench's own top-level module name is usually "tb" (true
-        # for VerilogEval), but not always -- e.g. RTLLM testbenches are
-        # named "<task>_tb" (barrel_shifter_tb, lfsr_tb, ...). Detect it
-        # from the testbench source instead of assuming "tb", so datasets
-        # with a different naming convention don't fail to compile purely
-        # because iverilog was told to look for a module that isn't there.
-        # Falls back to "tb" (the previous hardcoded behavior) if nothing
-        # is found, so VerilogEval's actual "tb" testbenches are unaffected.
-        # A testbench file can declare several modules (e.g. VerilogEval's
-        # test field defines a "reference_module" and a "stimulus_gen"
-        # helper BEFORE its actual top-level "tb" module). Two things to
-        # get right here:
-        #  (1) Anchor the match to the START of a line -- a naive
-        #      "\bmodule\s+(\w+)" also matches plain-English comments
-        #      like "// Instantiate the module\n    RAM uut (...)", where
-        #      "module" is followed by a newline and then an unrelated
-        #      identifier on the next line, producing a false module name.
-        #  (2) Prefer a module literally named "tb" if one exists anywhere
-        #      (covers VerilogEval, whose real testbench is declared last);
-        #      otherwise take the FIRST real module declaration, since in
-        #      every other convention seen (RTLLM) the outer testbench is
-        #      declared first, with any helper/checker module declared
-        #      after it.
+
         _tb_matches = _re.findall(r"^\s*module\s+(\w+)", problem["test"], _re.MULTILINE)
         if "tb" in _tb_matches:
             _tb_top = "tb"
@@ -610,31 +542,14 @@ def _grading_worker(problem: dict, completion: str, timeout: float, result) -> N
                         else:
                             result.append((f"failed: {cor} out of {tot} samples.", out, err, vcd_text))
                     elif _re.search(r"\bDesign\s+Passed\b", out, _re.IGNORECASE):
-                        # Some datasets (e.g. RTLLM) don't use VerilogEval's
-                        # "Mismatches: X in Y samples" convention -- their
-                        # testbenches self-report via their own $display
-                        # wording instead (RTLLM consistently prints
-                        # "...Design Passed..." only when its internal error
-                        # counter is exactly 0, and a different message
-                        # otherwise). Reaching this line means the
-                        # simulation compiled and ran to completion and
-                        # explicitly reported success.
+
                         result.append(("passed", out, err, vcd_text))
                     elif "syntax error" in err:
                         result.append(("failed: syntax error.", out, err, vcd_text))
                     elif len(err) > 0:
                         result.append(("failed: compile error.", out, err, vcd_text))
                     else:
-                        # RTLLM testbenches that don't report success also
-                        # don't use "Mismatches: X in Y samples" -- they
-                        # print things like "Test completed with 11/20
-                        # failures" or "3/16 NUM_DIV cases failing" via
-                        # their own $display calls. Forward that N/M
-                        # fraction through verbatim (instead of collapsing
-                        # it to a generic "info string not matched"
-                        # message) so parse_pass_fraction() can turn it
-                        # into a real continuous score rather than its
-                        # flat fallback.
+
                         _frac_match = _re.search(
                             r"(\d+)\s*/\s*(\d+)\s*(?:\w+\s+)*(?:failures?|failing|cases)",
                             out, _re.IGNORECASE,
@@ -877,11 +792,7 @@ async def enhance_prompt(prompt: str, mode: str = "enhanced", max_rounds: int = 
         original_intent = checkpoint.get("original_intent", "n/a - resumed from checkpoint, original intent not recorded")
 
     else:
-        # Checkpoint the expensive part (interface->VSL->render->real grading) so
-        # that if a LATER step (reworder/reviser/score agent) dies on a transient
-        # server error after all retries are exhausted, the next run of this
-        # task_id resumes from here instead of redoing the whole VSL evaluation
-        # from scratch.
+
         if checkpoint is not None and checkpoint.get("stage") == "base_eval":
             print(f"  [{task_id}] [DEBUG] Resuming from checkpoint at {checkpoint_path} "
                   f"-- skipping re-evaluation of the base (raw) prompt.")
@@ -1202,18 +1113,7 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
             for line in f:
                 if line.strip():
                     data = json.loads(line)
-                    # Some testbenches (e.g. a few RTLLM designs) $readmemh()
-                    # an auxiliary reference-data file from their own working
-                    # directory. Rather than embedding that file's content
-                    # inline in the eval jsonl, "aux_files" stores it as a
-                    # {filename: relative_path} map, kept as real files on
-                    # disk (relative to this eval_file's own directory, e.g.
-                    # datasets/rtllm/aux_files/<task_id>/<filename>) so
-                    # they're inspectable/diffable on their own. Resolve
-                    # them to actual file content once here at load time,
-                    # so _grading_worker (which runs in a separate spawned
-                    # process, possibly with a different cwd) can just write
-                    # the content out without needing to know this path.
+
                     if "aux_files" in data:
                         resolved = {}
                         for name, rel_path in data["aux_files"].items():
@@ -1236,9 +1136,7 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
 
     completed = 0
     failed = 0
-    all_metrics: list[dict] = []  # one entry per completed task -- feeds the run-level summary below
-    # lock so concurrent tasks don't mess up the file when writing at once
-    write_lock = asyncio.Lock()
+    all_metrics: list[dict] = []  
     semaphore = asyncio.Semaphore(concurrency)
 
     async def _run_one(data: dict):

@@ -328,8 +328,7 @@ _STATE_ENCODING: dict[str, int] = {}
 _VERILOG_SIZED_LITERAL_RE = re.compile(r"^(\d+)'([bdhoBDHO])([0-9a-fA-F_xXzZ]+)$")
 _VERILOG_BASE_TO_INT_BASE = {"b": 2, "d": 10, "h": 16, "o": 8}
 
-# matches Verilog's don't-care literal: bare x/X, or a sized form like
-# 1'bx, 8'bx, 4'hx. used both standalone and as one branch of a ternary
+
 _X_LITERAL_RE = re.compile(r"^(?:\d+'[a-zA-Z])?[xX]$")
 
 
@@ -395,9 +394,7 @@ def _normalize_concat_part(part: str) -> Optional[str]:
     m = _REPLICATION_RE.match(part)
     if m:
         count, inner = m.group(1), m.group(2).strip()
-        # the replicated part can be a single thing, or itself a comma
-        # list (an implicit concat) -- 5{a,b,c,d,e} means "repeat the
-        # group {a,b,c,d,e} 5 times"
+
         inner_parts = _split_top_level_commas(inner)
         normalized_inner = [_normalize_concat_part(p.strip()) for p in inner_parts]
         if all(n is not None for n in normalized_inner):
@@ -448,12 +445,7 @@ def _parse_operand(token: str, extra_ops: Optional[list] = None) -> OperandRef:
         rendered_parts = []
 
         for part in parts:
-            # A bare unsized digit (e.g. '0' or '1') used to pad a
-            # concatenation, as opposed to a real signal name -- Verilog
-            # requires every concatenation member to have a fixed, known
-            # width, and an unsized literal like plain '0' doesn't have
-            # one there (unlike everywhere else, where it's fine).
-            # Render it as a properly-sized 1-bit literal instead.
+
             if re.match(r"^[01]$", part):
                 rendered_parts.append(f"1'b{part}")
                 continue
@@ -484,16 +476,6 @@ def _parse_operand(token: str, extra_ops: Optional[list] = None) -> OperandRef:
     if _SIZED_CONST_RE.match(token):
         return OperandRef(raw_verilog=token)
 
-    # bit-select on a parenthesized expression, e.g. (A * B)[7:0] or
-    # (a+b)[3]. Every bit-select pattern below only matches when the part
-    # before '[' is a bare signal name (\w+) -- Verilog itself is fine
-    # indexing an arbitrary expression, but keeping that restriction here
-    # keeps the rest of this function simple and unambiguous. Rather than
-    # rejecting the expression case outright, reuse the same trick already
-    # used a few lines up for a complex concatenation member: extract the
-    # parenthesized expression into a fresh named COMB signal via
-    # _parse_expression, then bit-select THAT signal instead, which the
-    # patterns below already support.
     m = re.match(r"^\((.+)\)(\[.+\])$", token)
     if m and extra_ops is not None:
         inner_expr, bit_suffix = m.group(1).strip(), m.group(2)
@@ -516,12 +498,6 @@ def _parse_operand(token: str, extra_ops: Optional[list] = None) -> OperandRef:
             bit_range=(hi, lo)
         )
 
-    # bit range with a computed (non-literal) bound, e.g.
-    # in[sel*4+3:sel*4] -- Verilog can't express this as a plain [hi:lo]
-    # range since both bounds must be constants there, so we detect the
-    # common '<base>+<width-1> : <base>' shape and turn it into Verilog's
-    # dynamic part-select, base +: width. Falls through to the generic
-    # dynamic-index case below if the shape doesn't match this pattern.
     m = re.match(r"^(\w+)\[(.+):(.+)\]$", token)
     if m:
         sig, hi_expr, lo_expr = m.group(1), m.group(2).strip(), m.group(3).strip()
@@ -533,6 +509,9 @@ def _parse_operand(token: str, extra_ops: Optional[list] = None) -> OperandRef:
                 extra_ops.append(aux_op)
                 return OperandRef(raw_verilog=f"{sig}[{aux_name} +: {width}]")
 
+
+            return OperandRef(raw_verilog=f"{sig}[{hi_expr}:{lo_expr}]")
+
     # fixed bit index: foo[3]
     m = re.match(r"^(\w+)\[(\d+)\]$", token)
     if m:
@@ -541,11 +520,6 @@ def _parse_operand(token: str, extra_ops: Optional[list] = None) -> OperandRef:
             bit_index=int(m.group(2))
         )
 
-    # dynamic/expression bit index:
-    #   q[idx]
-    #   q[{A,B,C}]
-    #   q[a+b]
-    #   q[state=D?1:0]
     m = re.match(r"^(\w+)\[(.+)\]$", token)
     if m:
         sig = m.group(1)
@@ -726,20 +700,16 @@ def _parse_expression(target: str, expr: str, extra_ops: Optional[list] = None) 
     if expr in _STATE_ENCODING:
         return Operation(target=target, op=OpKind.CONST, operands=[], const_value=_STATE_ENCODING[expr])
 
-    # don't-care literal: bare x or a sized form like 1'bx, 8'hx --
-    # always renders as 1'bx no matter how it was written
     if _X_LITERAL_RE.match(expr):
         return Operation(target=target, op=OpKind.CONST, operands=[], const_is_x=True)
 
-    # unary NOT: ~<signal>, ~<signal>[bit], or ~(<expr>), as long as
-    # there's no other top-level binary operator in the rest of the expression
+
     if expr.startswith("~"):
         inner = expr[1:].strip()
         if not any(_split_top_level_token(inner, tok) for tok in _BINARY_OP_TOKENS_BY_LENGTH) \
                 and _split_top_level(inner, "?") is None:
             stripped_inner = _strip_outer_parens(inner)
-            # stripping the parens can reveal a hidden binary expression
-            # (e.g. ~(in1^in2)) -- that needs its own parse, not a plain operand
+
             if any(_split_top_level_token(stripped_inner, tok) for tok in _BINARY_OP_TOKENS_BY_LENGTH):
                 aux_name = _next_aux_signal()
                 aux_op = _parse_expression(aux_name, stripped_inner, extra_ops=extra_ops)
@@ -748,10 +718,7 @@ def _parse_expression(target: str, expr: str, extra_ops: Optional[list] = None) 
                 return Operation(target=target, op=OpKind.NOT, operands=[OperandRef(signal=aux_name)])
             return Operation(target=target, op=OpKind.NOT, operands=[_parse_operand(stripped_inner)])
 
-    # unary reduction: &<signal>, |<signal>, ^<signal> -- ANDs/ORs/XORs
-    # all the bits of a signal into one bit. e.g. &in means "AND all 100
-    # bits of in together". different from the binary form (a&b) because
-    # the operator sits right at the start of the expression, nothing before it
+
     _REDUCE_OP_KIND = {"&": OpKind.REDUCE_AND, "|": OpKind.REDUCE_OR, "^": OpKind.REDUCE_XOR}
     if expr and expr[0] in _REDUCE_OP_KIND:
         inner = expr[1:].strip()
@@ -760,9 +727,6 @@ def _parse_expression(target: str, expr: str, extra_ops: Optional[list] = None) 
             return Operation(target=target, op=_REDUCE_OP_KIND[expr[0]],
                               operands=[_parse_operand(_strip_outer_parens(inner))])
 
-    # if the whole expression is a concatenation, e.g. {state=D?1:0,
-    # state=C?1:0}, we need to catch that before checking for a ternary,
-    # otherwise the ? inside the braces gets mistaken for a top-level one
     if expr.startswith("{") and expr.endswith("}"):
         depth = 0
         matches_at_end = True
@@ -787,7 +751,8 @@ def _parse_expression(target: str, expr: str, extra_ops: Optional[list] = None) 
             raise VSLParseError(f"Ternary missing ':' in '{expr}'")
 
         true_part, _, false_part = rest_split
-        cond_part = cond_part.strip()
+
+        cond_part = _strip_outer_parens(cond_part.strip())
 
         term_strs = []
 
@@ -994,13 +959,6 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
                 value_raw_verilog=value_raw_verilog,
             )
 
-    # No comparison operator found at all -- e.g. a bare 'out[7]' or 'busy'
-    # used as its own boolean condition, the common Verilog/C convention
-    # for "this bit/signal is truthy" (implicitly != 0), rather than an
-    # explicit 'out[7]==1'. The loop above never matches this since there's
-    # no comparison token to split on. Recognize the same signal/bit-index/
-    # bit-range shapes as above and default the comparison to NEQ 0, rather
-    # than rejecting a condition form that's completely unambiguous.
     m = re.match(r"^(\w+)\[(\d+):(\d+)\]$", term_text)
     if m:
         return SimpleCondition(
@@ -1017,10 +975,6 @@ def _parse_comparison_term(term_text: str) -> SimpleCondition:
     if m:
         return SimpleCondition(signal=term_text, comparison=ComparisonKind.NEQ, value=0)
 
-    # Same bare-truthy shapes as above, but negated: '~wfull', '~busy[3]',
-    # '~busy[7:0]' -- the common "this signal is false/empty" condition
-    # (e.g. 'winc & ~wfull' meaning "write enabled and not full"). Mirrors
-    # the NEQ-0 fallback just above but as EQ 0.
     if term_text.startswith("~"):
         negated = term_text[1:].strip()
         m = re.match(r"^(\w+)\[(\d+):(\d+)\]$", negated)
@@ -1184,9 +1138,7 @@ def parse_module_ports(module_interface: str) -> dict[str, PortInfo]:
             current_width = 1
             current_is_reg = False
             rest = rest[m.end():].strip()
-        # otherwise this is either a continuation of the previous
-        # declaration ('input [3:0] a, b' -- direction/width carry over) or
-        # a bare name from a non-ANSI port list, which has no direction yet.
+
 
         if current_direction is None:
             continue
@@ -1277,19 +1229,14 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
 
     def _ensure_signal(name: str, is_register: bool = False, width: int = 1):
         if name not in signals_seen:
-            # a REG line always gives an explicit width; for plain
-            # operands, prefer the real interface width if we know it,
-            # instead of just defaulting to 1
+
             effective_width = width if width != 1 else port_widths.get(name, width)
             signals_seen[name] = Signal(
                 id=name, direction=PortDirection.INPUT, width=effective_width,
                 is_register=is_register, is_module_port=name in port_widths,
             )
         elif is_register:
-            # this is an authoritative REG declaration for this signal --
-            # even if it was already registered earlier (e.g. used as an
-            # operand in another REG's branch before we got here), the
-            # declared width is the real one and should override the guess
+
             signals_seen[name].is_register = True
             signals_seen[name].width = width
 
@@ -1349,10 +1296,7 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
             sig = signals_seen.get(token)
             if sig is not None:
                 return sig.width
-            # not registered yet (e.g. a module port only referenced here,
-            # inside a concat/replication, and nowhere else earlier) --
-            # fall back to its declared interface width instead of
-            # silently guessing 1, which corrupts any concat width sum
+
             if token in port_widths:
                 return port_widths[token]
         return 1
@@ -1391,13 +1335,6 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
                 best = max(best, port_widths[operand.signal])
         return best
 
-
-    # '#' has no meaning anywhere else in VSL (no delay syntax, no string
-    # literals), so it's unambiguously a comment marker whether it starts
-    # the line or trails after real content on it (e.g. "SP=0 -> 0   # full, hold").
-    # Strip a trailing "# ..." before the existing full-comment-line filter,
-    # so a trailing comment on a COMB branch doesn't get parsed as part of
-    # the branch's result value.
     def _strip_trailing_comment(ln: str) -> str:
         idx = ln.find("#")
         return ln[:idx] if idx != -1 else ln
@@ -1409,16 +1346,6 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
     ]
     lines = [ln for ln in lines if ln.strip()]
 
-    # Join a statement that the model wrapped across multiple physical
-    # lines because the expression got long, e.g.:
-    #   COMB next_wfull
-    #     * -> ((wptr[3] ^ rptr_sync1[3]) & (wptr[2] ^ rptr_sync1[2]) &
-    #           ~(wptr[1] ^ rptr_sync1[1]) & ~(wptr[0] ^ rptr_sync1[0]))
-    # VSL is otherwise one-statement-per-line, but nothing in the grammar
-    # forbids this and it's a natural thing to write for a long boolean
-    # chain. Detected purely by bracket balance -- '(', '{', '[' opened on
-    # one line and not yet closed -- so a normal '| cond -> result' line
-    # (always balanced on its own) is never affected.
     def _bracket_delta(ln: str) -> int:
         return sum(1 for ch in ln if ch in "([{") - sum(1 for ch in ln if ch in ")]}")
 
@@ -1511,9 +1438,7 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
                 return EdgeType.NONE
 
             if next_sig:
-                # 'state, next' pattern: this register just latches
-                # next_sig every clock edge. The actual priority logic for
-                # next_sig lives in a separate COMB block parsed below.
+
                 _ensure_signal(next_sig)
                 next_signal_names.add(next_sig)
                 ir.register_updates.append(RegisterUpdate(
@@ -1639,8 +1564,7 @@ def parse_vsl(text: str, module_interface: str = "") -> CircuitIR:
                     if name in output_reg_names or name in next_signal_names:
                         signals_seen[name].needs_always_block = True
                 comb_extra_ops: list = []
-                # Parse the RHS with a placeholder target -- the real
-                # multi-signal target is attached via target_concat below.
+
                 op = _parse_expression("", expr_text, extra_ops=comb_extra_ops)
                 op = op.model_copy(update={"target": "", "target_concat": target_names})
                 for aux_op in comb_extra_ops:
@@ -1762,9 +1686,7 @@ def validate_circuit(ir: CircuitIR) -> list[str]:
         driven_registers.add(ru.target_register)
 
         if ru.next_signal is not None:
-            # 'state, next' pattern: no branches here by design -- the
-            # priority logic lives in the corresponding COMB block, checked
-            # separately below.
+
             check_signal_exists(ru.next_signal, f"'{ru.target_register}' next_signal")
             continue
 
@@ -1789,15 +1711,7 @@ def validate_circuit(ir: CircuitIR) -> list[str]:
     comb_targets_declared |= {
         op.target for op in ir.combinational_ops if op.target
     }
-    # A register's NEXT= target doesn't always need its own COMB block: it's
-    # legitimate VSL for one register to directly chain off another
-    # register's current value every edge (e.g. a 2-stage synchronizer:
-    # REG sync1 NEXT=sync0 / REG sync0 NEXT=some_comb). The renderer already
-    # handles this correctly -- it just emits 'reg <= next_signal;' verbatim,
-    # which is valid Verilog whether next_signal is a COMB-driven wire or
-    # another register's output. Only require an explicit COMB block when
-    # NEXT= points at something that isn't itself a register target, since
-    # that's the case that would otherwise reference an undefined wire.
+
     register_targets_declared = {ru2.target_register for ru2 in ir.register_updates}
     missing_comb_blocks = next_signals_expected - comb_targets_declared - register_targets_declared
     if missing_comb_blocks:
@@ -2104,12 +2018,7 @@ def render_verilog(ir: CircuitIR) -> str:
 
     for cb in ir.comb_blocks:
         if cb.target_is_plain_wire_port:
-            # A plain (non-reg) output port can't be assigned inside an
-            # always block, so build the priority-branch logic as one
-            # nested ternary expression and drive it with a continuous
-            # assign instead. Branches are evaluated in the same priority
-            # order as the always-block form: the last (default) branch
-            # becomes the innermost ':' fallback.
+
             expr = _op_to_verilog_expr(cb.branches[-1].result_op, signals_by_id, internal_name_for)
             for branch in reversed(cb.branches[:-1]):
                 cond_str = _condition_to_verilog(branch.condition, internal_name_for)
@@ -2160,17 +2069,7 @@ def render_verilog(ir: CircuitIR) -> str:
             indent = "        "
 
         if ru.next_signal is not None:
-            # 'state, next' pattern: state simply latches next every edge.
-            # If the COMB block driving next_signal already has a branch that
-            # conditions on this register's own reset_signal, that COMB has
-            # already fully computed the correct reset-case value -- forcing
-            # a second, hardcoded 'if (reset) reg <= reset_value;' here would
-            # silently override that computed value with the REG line's
-            # literal reset_value whenever the two differ, producing wrong
-            # hardware (e.g. a register whose real reset output is nonzero
-            # but whose REG declaration used the common 'reset.sync->0'
-            # boilerplate). So only add the extra sync-reset branch when the
-            # feeding COMB block does NOT already branch on reset_signal.
+
             next_comb = next((cb for cb in ir.comb_blocks if cb.target_signal == ru.next_signal), None)
             comb_handles_reset = bool(
                 is_sync_reset and next_comb and any(
@@ -2310,14 +2209,7 @@ def diff_circuit_ir(old: CircuitIR, new: CircuitIR) -> list[str]:
             op.const_value, op.const_is_x,
         )
 
-    # combinational_ops: plain 'signal = expr' assignments outside a REG or
-    # COMB block (e.g. 'sum = A + B'). This -- along with comb_blocks right
-    # below -- was previously never compared at all, meaning any purely
-    # combinational design (adders, multipliers, ALUs, comparators, muxes)
-    # got NO structural feedback from a revision, no matter how much its
-    # logic actually changed: only register_updates was ever diffed here,
-    # so the revision loop's "structural_note" silently defaulted to
-    # "No structural change detected" for every non-register edit.
+
     old_comb_ops = {op.target or tuple(op.target_concat or []): op for op in old.combinational_ops}
     new_comb_ops = {op.target or tuple(op.target_concat or []): op for op in new.combinational_ops}
 
@@ -2333,9 +2225,7 @@ def diff_circuit_ir(old: CircuitIR, new: CircuitIR) -> list[str]:
         elif _op_key(old_op) != _op_key(new_op):
             changes.append(f"combinational signal '{label}': expression changed")
 
-    # comb_blocks: priority/case-style combinational logic (e.g. an ALU's
-    # opcode mux, or FSM next-state logic) -- same branch/condition shape
-    # as register_updates.branches, just driving a wire instead of a reg.
+
     old_blocks = {cb.target_signal: cb for cb in old.comb_blocks}
     new_blocks = {cb.target_signal: cb for cb in new.comb_blocks}
 

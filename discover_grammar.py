@@ -297,7 +297,14 @@ async def run_discovery(
     test_problems_raw: Path | None = None,
     seed: int = 0,
     reference_size: int = 40,
+    base_rules_path: Path | None = None,
 ):
+    
+    base_rules_text = None
+    if base_rules_path is not None:
+        base_rules_text = base_rules_path.read_text(encoding="utf-8")
+        print(f"Loaded base rules reference ({len(base_rules_text)} chars) from {base_rules_path}")
+
     examples = load_successful_examples(history_path)
     print(f"Loaded {len(examples)} successful (description, VSL) examples from {history_path}")
     if not examples:
@@ -306,12 +313,7 @@ async def run_discovery(
             "run with the updated code that stores vsl_text per round."
         )
 
-    # Test set: by default, test on the same source as the reference examples
-    # (risk of the grammar overfitting to what it already saw). If a separate
-    # test_history_path is given (e.g. a run against VerilogDescription_Human,
-    # a different, harder style of description than the Machine-derived
-    # reference set), test on that instead -- a much better check of whether
-    # the grammar actually generalizes rather than just memorizing patterns.
+    
     raw_test_eval_problems = {}
     if test_problems_raw is not None:
         test_examples, raw_test_eval_problems = load_raw_test_pool(test_problems_raw)
@@ -348,11 +350,7 @@ async def run_discovery(
 
     rng = random.Random(seed)
 
-    # Truncate any rounds file left over from a previous run against this
-    # same --output path -- previously this file was opened with mode "a"
-    # for every round, so re-running with the same --output silently
-    # appended a fresh run's rounds after a stale prior run's, making the
-    # file's round numbers ambiguous (two different "round 1"s, etc.).
+
     rounds_path = output_path.with_suffix(".rounds.jsonl")
     rounds_path.write_text("", encoding="utf-8")
 
@@ -371,7 +369,19 @@ async def run_discovery(
             for ex in reference_set
         )
 
-        prompt_parts = [
+        prompt_parts = []
+        if base_rules_text:
+            prompt_parts += [
+                "Base rules: the deterministic backend that turns VSL into Verilog "
+                "supports the constructs described below. These are NOT optional "
+                "style suggestions -- they are hard constraints/capabilities of the "
+                "actual parser. Your grammar_text MUST preserve every rule and "
+                "construct covered here (rewritten in your own words/style/order is "
+                "fine, and you should still add your own worked examples), never "
+                "drop or contradict them just to make the guide shorter:",
+                base_rules_text,
+            ]
+        prompt_parts += [
             "Reference examples (description -> VSL) that scored a perfect "
             "execution score with a previous grammar:",
             reference_block,
@@ -394,15 +404,7 @@ async def run_discovery(
                 continue
 
             candidate_text = proposal_result.output.grammar_text or ""
-            # A real grammar-with-examples answer is necessarily long (the
-            # worked examples alone run to a few thousand characters). An
-            # empty/near-empty grammar_text (seen in practice with gpt-oss's
-            # reasoning mode occasionally returning a bare "analysis" stub
-            # instead of the structured field) or one with no worked
-            # examples at all would silently poison this round's test --
-            # every candidate VSL generation would fail against it. Treat
-            # that the same as a call failure and retry instead of
-            # proceeding with a broken grammar.
+
             if len(candidate_text) < 400 or "Description:" not in candidate_text or "VSL:" not in candidate_text:
                 if _attempt == 7:
                     print(f"[WARNING] round {round_num}: discovery_agent kept returning a "
@@ -462,12 +464,22 @@ def main(
     output: Path = typer.Option(Path("discovered_grammar.txt"), help="Where to write the final grammar text."),
     seed: int = typer.Option(0, help="Random seed for sampling, for reproducibility."),
     reference_size: int = typer.Option(40, help="Number of (description, VSL) reference examples sampled from --history and shown to the discovery agent each round, for more variety in what it few-shots against."),
+    base_rules: Path = typer.Option(
+        None, "--base-rules",
+        help=("Optional path to a fixed reference file describing constructs "
+              "the vsl_core.py parser/renderer actually supports (e.g. "
+              "grammar_base_rules.txt). Injected into every round's prompt "
+              "as a hard-constraint reference so a given round's free-form "
+              "proposal can't silently drop critical constructs -- the "
+              "discovery agent still rewrites it in its own style, and the "
+              "round is still tested and selected normally."),
+    ),
 ):
     asyncio.run(run_discovery(
         history, rounds, sample_size, problems, output,
         test_history_path=test_history, test_problem_file=test_problems,
         test_problems_raw=test_problems_raw, seed=seed,
-        reference_size=reference_size,
+        reference_size=reference_size, base_rules_path=base_rules,
     ))
 
 
