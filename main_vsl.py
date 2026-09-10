@@ -1138,6 +1138,7 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
     failed = 0
     all_metrics: list[dict] = []  
     semaphore = asyncio.Semaphore(concurrency)
+    write_lock = asyncio.Lock()
 
     async def _run_one(data: dict):
         nonlocal completed, failed
