@@ -1,0 +1,18 @@
+{
+  "mode": "enhanced",
+  "use_gir": true,
+  "force_vsl": true,
+  "label": "verilogeval_v1_machine_forcevsl_v8_FINAL",
+  "num_tasks": 143,
+  "avg_model_calls": 2.51,
+  "avg_model_requests": 2.51,
+  "avg_request_tokens": 4731.021,
+  "avg_response_tokens": 7380.091,
+  "avg_total_tokens": 12111.112,
+  "total_tokens_all_tasks": 1731889,
+  "avg_llm_wall_time_s": 55.056,
+  "avg_grading_wall_time_s": 6.082,
+  "avg_total_wall_time_s": 61.33,
+  "avg_retries": 0.021,
+  "avg_num_rounds": 1.399
+}

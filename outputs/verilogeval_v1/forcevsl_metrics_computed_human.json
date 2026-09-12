@@ -1,0 +1,14 @@
+{
+  "dataset": "VerilogEval_v1_Human_ForceVSL_v8",
+  "total_tasks": 156,
+  "pass_at_1": {
+    "passed": 138,
+    "pass@1": 88.46,
+    "avg_score_pct": 93.86
+  },
+  "resolve_rate": {
+    "passed": 147,
+    "resolve_rate": 94.23,
+    "avg_score_pct": 97.16
+  }
+}

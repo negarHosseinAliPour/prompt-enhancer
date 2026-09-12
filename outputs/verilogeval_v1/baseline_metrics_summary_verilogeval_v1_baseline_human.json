@@ -1,0 +1,18 @@
+{
+  "mode": "baseline",
+  "use_gir": false,
+  "force_vsl": false,
+  "label": "verilogeval_v1_baseline",
+  "num_tasks": 156,
+  "avg_model_calls": 1.0,
+  "avg_model_requests": 1.0,
+  "avg_request_tokens": 680.962,
+  "avg_response_tokens": 2117.353,
+  "avg_total_tokens": 2798.314,
+  "total_tokens_all_tasks": 436537,
+  "avg_llm_wall_time_s": 16.842,
+  "avg_grading_wall_time_s": 4.259,
+  "avg_total_wall_time_s": 21.101,
+  "avg_retries": 0.0,
+  "avg_num_rounds": 1.0
+}
