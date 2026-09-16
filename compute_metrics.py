@@ -1,15 +1,4 @@
 """
-Computes pass@1 and resolve-rate metrics for any dataset's force-VSL run,
-using the pipeline's own internal execution scores (from vsl_core.py's iverilog
-grading), following the same pass@1 / resolve-rate definitions used in the
-VSL_Description.docx methodology doc:
-
-  - pass@1: score of the very first attempt (round -1), before any rewording
-    or revision-loop rounds.
-  - resolve rate: best score reached after the full pipeline (raw attempt,
-    reworded retry, up to 3 revision-loop rounds) -- an oracle-guided best-of-4,
-    since the revision loop sees the real iverilog error each round.
-
 Usage:
     python3 compute_metrics.py <history_file.jsonl> <dataset_label> [output_file.json]
 

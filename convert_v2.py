@@ -1,33 +1,4 @@
 """
-Converts VerilogEval v2 (spec-to-RTL) into the record format main_vsl_3.py
-already reads, so the existing pipeline runs on v2 with no code changes.
-
-v2 ships one problem as three files -- Prob###_name_prompt.txt (the spec),
-_ref.sv (the reference module) and _test.sv (the testbench, which
-instantiates both RefModule and TopModule). The pipeline instead expects
-two JSONL files shaped like v1:
-
-  eval  : {task_id, prompt, canonical_solution, test}
-  desc  : {task_id, simple_description, detail_description}
-
-The mapping:
-
-  prompt             the TopModule header extracted from _ref.sv, ending at
-                     the closing ");" -- this is the fixed interface the
-                     pipeline appends the generated body to
-  canonical_solution the reference body + endmodule
-  test               _test.sv followed by _ref.sv, since the testbench needs
-                     RefModule present to compare against
-  descriptions       the spec text from _prompt.txt
-
-ONE DEVIATION WORTH KNOWING. Native v2 spec-to-RTL asks the model to invent
-the interface itself; this conversion hands it over fixed. That makes the
-task slightly easier than the published v2 numbers, so do not compare
-against them directly. It is also unavoidable here: the VSL renderer needs a
-declared interface to type its ports against. Baseline and VSL both receive
-the same fixed interface, so the comparison between them stays fair -- which
-is the comparison the experiment is actually about.
-
 Usage:
     python3 convert_v2.py verilog-eval-v2/dataset_spec-to-rtl outputs/v2 \\
         [--verify]
@@ -44,9 +15,6 @@ from pathlib import Path
 
 
 def split_ref(ref_text: str):
-    """Splits a _ref.sv into (header, body). The header runs from 'module'
-    through the ');' that closes the port list; the body is everything
-    between that and the final endmodule."""
     text = re.sub(r"\bRefModule\b", "TopModule", ref_text).strip()
 
     m = re.search(r"module\s+TopModule\s*", text)
@@ -54,7 +22,6 @@ def split_ref(ref_text: str):
         raise ValueError("no TopModule declaration found")
     start = m.start()
 
-    # walk the port list to its matching close paren
     i = text.index("(", start)
     depth = 0
     for j in range(i, len(text)):
@@ -86,8 +53,7 @@ def run_sim(source: str, timeout: float = 90.0):
                                timeout=timeout, cwd=d)
         except subprocess.TimeoutExpired:
             return "timeout"
-    # parse the verdict before looking at TIMEOUT: several v2 testbenches
-    # hit their internal cycle limit and print TIMEOUT even when correct
+
     m = re.search(r"Mismatches: (\d+) in (\d+) samples", r.stdout)
     if m:
         return "pass" if m.group(1) == "0" else f"fail {m.group(1)}/{m.group(2)}"
@@ -119,7 +85,6 @@ def convert(dataset_dir):
             "task_id": stem,
             "prompt": header + "\n",
             "canonical_solution": body + "\nendmodule\n",
-            # the testbench needs RefModule in scope to compare against
             "test": test_file.read_text(encoding="utf-8")
                     + "\n"
                     + ref_file.read_text(encoding="utf-8"),

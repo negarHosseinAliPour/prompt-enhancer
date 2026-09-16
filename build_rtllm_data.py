@@ -23,6 +23,7 @@ def find_instantiation(text, module_name):
         pos = m.end()
         while pos < len(text) and text[pos] in ' \t\r\n':
             pos += 1
+
         param_conns = []
         if pos < len(text) and text[pos] == '#':
             popen = text.find('(', pos)
@@ -36,21 +37,25 @@ def find_instantiation(text, module_name):
             pos = pclose + 1
             while pos < len(text) and text[pos] in ' \t\r\n':
                 pos += 1
+
         im = re.match(r'(\w+)\s*\(', text[pos:])
         if not im:
             continue
+
         popen2 = pos + im.end() - 1
         pclose2 = find_matching_paren(text, popen2)
         if pclose2 == -1:
             continue
+
         after = text[pclose2 + 1:pclose2 + 5]
         if ';' not in after:
             continue
+
         port_text = text[popen2 + 1:pclose2]
         port_conns = re.findall(r'\.(\w+)\s*\(\s*([^,()]*?)\s*\)', port_text)
         if port_conns:
             return param_conns, port_conns
-        # also handle positional (non-named) connections as a fallback signal
+
         positional = [s.strip() for s in port_text.split(',') if s.strip()]
         if positional:
             return param_conns, [('__pos{}__'.format(i), s) for i, s in enumerate(positional)]
@@ -58,20 +63,15 @@ def find_instantiation(text, module_name):
 
 
 def build_decl_index(text):
-    """Map signal_name -> (kind, width) for every reg/wire declaration in text."""
     index = {}
-    # strip line comments to avoid false matches
     clean = re.sub(r'//.*', '', text)
     for m in re.finditer(r'\b(reg|wire)\s*(\[[^\]]*\])?\s*([^;]+);', clean):
         kind, width, rest = m.group(1), m.group(2) or '', m.group(3)
-        # skip if this looks like a port declaration list (contains 'input'/'output') - rare, but guard
         for item in rest.split(','):
             item = item.strip()
             if not item:
                 continue
-            # drop initializer
             item = item.split('=')[0].strip()
-            # drop array subscript like foo[0:15]
             name_match = re.match(r'(\w+)', item)
             if name_match:
                 name = name_match.group(1)
@@ -99,6 +99,7 @@ for root, dirs, files in os.walk(base):
             description = f.read().strip()
         with open(os.path.join(root, 'testbench.v'), encoding='utf-8', errors='replace') as f:
             testbench = f.read()
+
         canonical = ''
         for fn in files:
             if fn.startswith('verified_') and fn.endswith('.v'):
@@ -113,10 +114,12 @@ for root, dirs, files in os.walk(base):
         else:
             param_conns, port_conns = inst
             decl_index = build_decl_index(testbench)
+
             param_lines = []
             for pname, pval in param_conns:
                 default = get_param_default(testbench, pval) or get_param_default(testbench, pname) or '1'
                 param_lines.append('parameter {} = {}'.format(pname, default))
+
             port_lines = []
             unresolved = []
             positional_flag = any(p.startswith('__pos') for p, _ in port_conns)
@@ -132,10 +135,12 @@ for root, dirs, files in os.walk(base):
                 width_str = (width + ' ') if width else ''
                 label = pname if not pname.startswith('__pos') else sig
                 port_lines.append('{} {}{}'.format(direction, width_str, label))
+
             if unresolved:
                 issues.append((task_id, 'unresolved: {}'.format(unresolved)))
             if positional_flag:
                 issues.append((task_id, 'POSITIONAL connections (names guessed from signal names) - please review'))
+
             if param_lines:
                 header = 'module {} #(\n    {}\n)(\n    {}\n);\n'.format(
                     task_id, ',\n    '.join(param_lines), ',\n    '.join(port_lines))
