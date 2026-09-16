@@ -1,0 +1,14 @@
+{
+  "dataset": "rtlcoder_equiv",
+  "total_tasks": 2141,
+  "pass_at_1": {
+    "passed": 1320,
+    "pass@1": 61.65,
+    "avg_score_pct": 70.71
+  },
+  "resolve_rate": {
+    "passed": 1551,
+    "resolve_rate": 72.44,
+    "avg_score_pct": 79.73
+  }
+}

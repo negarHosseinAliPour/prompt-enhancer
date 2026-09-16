@@ -1,0 +1,14 @@
+{
+  "dataset": "mgverilog_equiv",
+  "total_tasks": 3667,
+  "pass_at_1": {
+    "passed": 700,
+    "pass@1": 19.09,
+    "avg_score_pct": 28.67
+  },
+  "resolve_rate": {
+    "passed": 893,
+    "resolve_rate": 24.35,
+    "avg_score_pct": 34.86
+  }
+}
