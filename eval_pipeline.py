@@ -1,3 +1,7 @@
+"""
+Usage:
+    python3 eval_pipeline.py
+"""
 import multiprocessing
 try:
     multiprocessing.set_start_method("fork")
@@ -52,10 +56,11 @@ def run_eval(problem_file, sample_file, out_name):
 
 def main():
     run_eval(
-    "verilog-eval/data/VerilogEval_Machine_real.jsonl",
-    "outputs/enhanced_vsl_forcevsl_samples_gptoss_machine_TRUE_FINAL.jsonl",
-    "gptoss_machine_forcevsl_final",
-)
+        "verilog-eval/data/VerilogEval_Machine_real.jsonl",
+        "outputs/enhanced_vsl_forcevsl_samples_gptoss_machine_TRUE_FINAL.jsonl",
+        "gptoss_machine_forcevsl_final",
+    )
+
 
 if __name__ == "__main__":
     main()

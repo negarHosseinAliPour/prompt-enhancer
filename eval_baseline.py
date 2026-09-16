@@ -1,8 +1,4 @@
 """
-Evaluates the no-VSL baseline (raw description straight to execution_agent,
-one single attempt, no revision loop). For this mode, pass@1 and the
-resolve rate are the same number, since there is only one round.
-
 Usage:
     python3 eval_baseline.py
 """
@@ -58,28 +54,18 @@ def run_eval(problem_file, sample_file, out_name):
     print(f"Saved to {out_file}")
 
 
-# def main():
-#     run_eval(
-#         "verilog-eval/data/VerilogEval_Machine.jsonl",
-#         "outputs/baseline_samples_machine.jsonl",
-#         "machine",
-#     )
-#     run_eval(
-#         "verilog-eval/data/VerilogEval_Human.jsonl",
-#         "outputs/baseline_samples_human.jsonl",
-#         "human",
-#     )
 def main():
     run_eval(
-    "verilog-eval/data/VerilogEval_Machine_real.jsonl",
-    "outputs/baseline_samples_gptoss_machine_full.jsonl",
-    "gptoss_machine_baseline_full",
-)
-run_eval(
-    "verilog-eval/data/VerilogEval_Human.jsonl",
-    "outputs/baseline_samples_gptoss_human_full.jsonl",
-    "gptoss_human_baseline_full",
-)
-  
+        "verilog-eval/data/VerilogEval_Machine_real.jsonl",
+        "outputs/baseline_samples_gptoss_machine_full.jsonl",
+        "gptoss_machine_baseline_full",
+    )
+    run_eval(
+        "verilog-eval/data/VerilogEval_Human.jsonl",
+        "outputs/baseline_samples_gptoss_human_full.jsonl",
+        "gptoss_human_baseline_full",
+    )
+
+
 if __name__ == "__main__":
     main()
