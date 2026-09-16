@@ -1,7 +1,4 @@
-"""
-Usage:
-    python3 eval_pipeline.py
-"""
+
 import multiprocessing
 try:
     multiprocessing.set_start_method("fork")
