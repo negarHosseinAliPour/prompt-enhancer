@@ -1,17 +1,3 @@
-"""
-Appends (or updates) one row in a master CSV summarizing a dataset run's
-results: pass@1, resolve_rate, avg_score (continuous), self-healing
-breakdown, and token/time metrics -- all from the pipeline's own history
-file. Meant to be run once per dataset/run so the master CSV accumulates
-a comparable row per dataset (baseline vs force-VSL, RTLLM, VerilogEval v1, etc).
-
-Usage:
-    python3 add_dataset_summary.py <history_file.jsonl> <dataset_label> [master_csv]
-
-Example:
-    python3 add_dataset_summary.py outputs/verilogeval_v2/baseline_history_verilogeval_v2_baseline_fixed_merged.jsonl VerilogEval_v2_Baseline
-    python3 add_dataset_summary.py outputs/verilogeval_v2/enhanced_vsl_forcevsl_history_verilogeval_v2_forcevsl_v8_FINAL.jsonl VerilogEval_v2_ForceVSL_v8
-"""
 import json
 import sys
 import csv
