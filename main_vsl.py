@@ -1134,6 +1134,32 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
             if line.strip():
                 tasks_data.append(json.loads(line))
 
+    # Resume support: if a previous run already wrote a history file for
+    # this exact (mode, use_gir, force_vsl, label, output_dir) combination,
+    # treat every task_id already recorded there as done and skip it this
+    # time, instead of wiping the file and redoing every task from scratch.
+    # This is a general fix (affects every dataset/run using this file, not
+    # any one task) -- the previous behavior unconditionally truncated both
+    # output files before the run and re-ran the full task list every time,
+    # which made stopping and restarting a large run always start over.
+    already_done_ids: set[str] = set()
+    if history_file.exists():
+        with open(history_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    already_done_ids.add(json.loads(line)["task_id"])
+                except (json.JSONDecodeError, KeyError):
+                    continue
+
+    if already_done_ids:
+        total_before = len(tasks_data)
+        tasks_data = [d for d in tasks_data if d.get("task_id") not in already_done_ids]
+        print(f"Resuming: {len(already_done_ids)} task(s) already in {history_file}, "
+              f"skipping them -- {len(tasks_data)} of {total_before} remain to run.")
+
     completed = 0
     failed = 0
     all_metrics: list[dict] = []  
@@ -1225,9 +1251,14 @@ async def process_file(jsonl_file: pathlib.Path, mode: str = "enhanced", use_gir
         finally:
             _current_metrics.reset(metrics_ctx_token)
 
-    # clear the output files before the concurrent runs start
-    open(output_file, "w", encoding="utf-8").close()
-    open(history_file, "w", encoding="utf-8").close()
+    # clear the output files before the concurrent runs start -- but only on a
+    # genuinely fresh run. If already_done_ids is non-empty we are resuming an
+    # interrupted run and these files already hold real completed results;
+    # truncating them here would erase exactly the records the skip-logic
+    # above just used to decide what not to re-run.
+    if not already_done_ids:
+        open(output_file, "w", encoding="utf-8").close()
+        open(history_file, "w", encoding="utf-8").close()
 
     await asyncio.gather(*(_run_one(data) for data in tasks_data))
 
@@ -1303,8 +1334,17 @@ def main(
               "outputs/verilogeval_v1) to keep different datasets' runs "
               "from mixing together in the same directory."),
     ),
+    concurrency: int = typer.Option(
+        None, "--concurrency",
+        help=("Max tasks processed in parallel. Defaults to 2 when "
+              "VSL_MODEL=gpt-oss, else 3 -- raise this for a large dataset "
+              "if your rate limits allow it, e.g. --concurrency 8."),
+    ),
 ):
-    asyncio.run(process_file(jsonl_file, mode=mode, use_gir=use_gir, force_vsl=force_vsl, eval_file=eval_file, label=label, output_dir=output_dir))
+    kwargs = dict(mode=mode, use_gir=use_gir, force_vsl=force_vsl, eval_file=eval_file, label=label, output_dir=output_dir)
+    if concurrency is not None:
+        kwargs["concurrency"] = concurrency
+    asyncio.run(process_file(jsonl_file, **kwargs))
 
     """
     Reads prompts from a JSONL file, improves them with agents (using
