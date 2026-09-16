@@ -1,19 +1,3 @@
-"""Grading adapter for VeriReason-style problems: dynamic tb top-module name
-(no hardcoded "-s tb"), and correctness measured by diffing the candidate's
-actual test_vectors.txt against the dataset's precomputed tb_result --
-NOT by parsing the testbench's own $display wording, which is inconsistent
-across tasks (some print "ERROR: ...", others "ASSERTION FAILED: ...", so a
-keyword search under- or over-counts failures depending on the task).
-
-Returns:
-    {
-        "score": float in [0, 1],
-        "gradeable": bool,   # False = compile/tooling failure, not a code-quality signal
-        "detail": str,
-        "stdout": str,
-        "stderr": str,
-    }
-"""
 import os
 import shutil
 import subprocess
@@ -21,9 +5,6 @@ import tempfile
 
 
 def _normalize_vector_line(line: str) -> str:
-    # tb_result and test_vectors.txt both hold whitespace-separated fields
-    # (hex or binary); collapse internal whitespace so formatting quirks
-    # (extra spaces, trailing \r) don't count as mismatches.
     return " ".join(line.split())
 
 
@@ -73,7 +54,7 @@ def check_correctness_verireason(problem: dict, completion: str, timeout: float 
         n_total = len(expected_lines)
         n_compare = min(len(actual_lines), n_total)
         n_mismatch = sum(1 for i in range(n_compare) if actual_lines[i] != expected_lines[i])
-        n_mismatch += n_total - n_compare  # missing lines (sim aborted early) count as wrong
+        n_mismatch += n_total - n_compare
 
         score = max(0.0, min(1.0, 1.0 - (n_mismatch / n_total)))
         detail = f"{n_mismatch} mismatch(es) out of {n_total} test vectors (vs. tb_result) -> score {score:.4f}"

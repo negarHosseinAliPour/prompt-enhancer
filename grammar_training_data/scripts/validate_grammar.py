@@ -1,15 +1,4 @@
-"""Validate a single, already-discovered VSL grammar against a full pool of
-raw (ungraded) {task_id, description, module_interface} records -- the same
-structural-validity check discover_grammar.py's test_grammar()/_try_one()
-do internally, but standalone so a winning grammar can be checked against
-the FULL pool (e.g. all 2,649 RTL-Coder_small tasks) rather than just the
-150-task sample used during the discovery rounds themselves.
-
-Does NOT run iverilog / simulation -- like the discovery loop's own test
-step, this only checks that the candidate agent's VSL parses, validates,
-and renders successfully. This dataset has no testbenches, so a real
-execution score is not possible here regardless.
-
+"""
 Usage:
     python3 validate_grammar.py \
         --grammar ../discovered_grammar_multidataset.txt \
@@ -25,11 +14,6 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-# Reuse vsl_core's own MODEL, which already resolves VSL_MODEL=gpt-oss (and
-# any other supported value) to the correct pydantic_ai model object --
-# duplicating that resolution here (e.g. passing the literal string
-# "gpt-oss" to Agent()) fails, since "gpt-oss" is a VSL_MODEL env var value,
-# not a real pydantic_ai model identifier.
 from vsl_core import parse_vsl, validate_circuit, render_verilog, VSLParseError, ValidationError, MODEL
 
 from pydantic import BaseModel, Field

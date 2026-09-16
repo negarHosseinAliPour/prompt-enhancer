@@ -20,11 +20,6 @@ async def run_one(problem: dict, sem: asyncio.Semaphore) -> dict:
         task_id = problem["task_id"]
         prompt = problem["description"]
         module_interface = problem["module_interface"]
-        # the description alone doesn't always name the real ports (unlike
-        # VerilogEval's descriptions, which do) -- give the model the real
-        # interface too so it uses matching signal names. "prompt" in the
-        # saved history stays the plain description, so discovery data
-        # (and later grammar generalization) isn't tied to this detail.
         agent_input = (
             prompt
             + "\n\nThe module's exact interface (use these exact signal names):\n"
@@ -57,9 +52,6 @@ async def run_one(problem: dict, sem: asyncio.Semaphore) -> dict:
 
         try:
             body = render_verilog(ir)
-            # module_interface is the bare header ("module name(...);"), no
-            # body and no endmodule -- same convention main_vsl.py uses for
-            # VerilogEval's "prompt" field.
             candidate = module_interface + "\n" + body + "\n\nendmodule\n"
         except Exception as e:
             rec = _fail(task_id, prompt, "render", e)

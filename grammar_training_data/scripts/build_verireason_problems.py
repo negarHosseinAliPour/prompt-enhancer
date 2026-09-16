@@ -1,17 +1,4 @@
-"""Convert Nellyw888/VeriReason-RTL-Coder_7b_reasoning_tb_simple into a
-problem file for grading via grade_verireason.py.
-
-Also extracts each task's module header ("module name(...);" or
-"module name #(...)(...);", no body, no endmodule) from its reference
-solution -- main_vsl.py's convention: the final candidate is
-header + rendered_body + "endmodule", never a full module rendered on its
-own.
-
-Keeps tb_result (the dataset's precomputed correct simulation output) so
-grading can diff the candidate's actual output against it directly, instead
-of parsing each testbench's own $display wording -- those aren't consistent
-across tasks (some say "ERROR: ...", others "ASSERTION FAILED: ...", etc).
-
+"""
 Usage:
     python3 build_verireason_problems.py --raw raw/verireason_tb_simple.jsonl --out converted/verireason_problems.jsonl
 """
@@ -21,11 +8,6 @@ import re
 
 
 def extract_verilog(output_field: str) -> str | None:
-    # the "output" field often has a ```verilog snippet inside <think>...
-    # </think> (an illustrative fragment from the reasoning) AND the real,
-    # complete module inside <answer>...</answer> -- prefer the answer
-    # block; fall back to the last fenced block in the text (the answer
-    # normally comes after the reasoning) rather than the first.
     answer_match = re.search(r"<answer>(.*?)</answer>", output_field, re.DOTALL)
     search_text = answer_match.group(1) if answer_match else output_field
     blocks = re.findall(r"```(?:verilog)?\s*\n(.*?)```", search_text, re.DOTALL)
@@ -43,8 +25,8 @@ def extract_module_header(verilog_text: str) -> str | None:
     m = re.search(r"\bmodule\s+\w+\s*", verilog_text)
     if not m:
         return None
+
     pos = m.end()
-    # optional parameter block: module name #( ... )
     if pos < len(verilog_text) and verilog_text[pos] == "#":
         popen = verilog_text.find("(", pos)
         if popen == -1:
@@ -64,8 +46,10 @@ def extract_module_header(verilog_text: str) -> str | None:
         pos = pclose + 1
         while pos < len(verilog_text) and verilog_text[pos] in " \t\r\n":
             pos += 1
+
     if pos >= len(verilog_text) or verilog_text[pos] != "(":
         return None
+
     depth = 0
     for i in range(pos, len(verilog_text)):
         if verilog_text[i] == "(":
@@ -92,11 +76,13 @@ def main():
         for line in f_in:
             if not line.strip():
                 continue
+
             rec = json.loads(line)
             solution = extract_verilog(rec["output"])
             tb_name = extract_tb_module_name(rec["tb"])
             header = extract_module_header(solution) if solution else None
             tb_result = rec.get("tb_result", "").strip()
+
             if not solution:
                 drop_reasons[rec["id"]] = "no code block in output"
             elif not tb_name:
@@ -118,6 +104,7 @@ def main():
                 f_out.write(json.dumps(problem) + "\n")
                 kept += 1
                 continue
+
             dropped += 1
 
     print(f"wrote {kept} problems to {args.out} ({dropped} dropped)")
